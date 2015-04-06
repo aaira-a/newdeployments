@@ -1,4 +1,5 @@
 
+import gzip
 import subprocess
 import xml.etree.ElementTree as ET
 
@@ -25,3 +26,9 @@ def compress_css(path):
 
 def compile_js(path):
     return subprocess.call(['java', '-jar', 'compiler.jar', '--js', path, '--js_output_file', path + '.temp'])
+
+
+def gzip_file(path):
+    with open(path, 'rb') as input_file:
+        with gzip.open(path + '.gz', 'wb') as output_file:
+            output_file.writelines(input_file)

@@ -5,7 +5,10 @@ from mydeploy import (
     compile_js,
     compress_css,
     create_list_from_xml,
+    gzip_file,
     )
+
+import os.path
 
 
 class XMLTest(unittest.TestCase):
@@ -61,3 +64,22 @@ class ClosureCompilerTest(unittest.TestCase):
         mock_subprocess.return_value = 1
         return_code = compile_js('fixtures/notfound.js')
         self.assertEqual(return_code, 1)
+
+
+class GZipTest(unittest.TestCase):
+
+    def test_gzip_file_should_produce_smaller_file_than_original(self):
+        input_path = 'fixtures/styles.css'
+        output_path = 'fixtures/styles.css.gz'
+
+        self.assertFalse(os.path.exists(output_path))
+        gzip_file(input_path)
+        self.assertTrue(os.path.exists(output_path))
+
+        input_size = os.path.getsize(input_path)
+        output_size = os.path.getsize(output_path)
+
+        self.assertLess(output_size, input_size)
+
+        os.remove(output_path)
+        self.assertFalse(os.path.exists(output_path))
