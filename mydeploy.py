@@ -1,4 +1,5 @@
 
+import subprocess
 import xml.etree.ElementTree as ET
 
 
@@ -16,3 +17,7 @@ def create_list_from_xml(path):
         packed.append(sublist)
 
     return packed
+
+
+def compress_css(path):
+    subprocess.call(['java', '-jar', 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
