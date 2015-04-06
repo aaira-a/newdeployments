@@ -20,4 +20,4 @@ def create_list_from_xml(path):
 
 
 def compress_css(path):
-    subprocess.call(['java', '-jar', 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
+    return subprocess.call(['java', '-jar', 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
