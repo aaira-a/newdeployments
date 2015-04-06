@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 
 from mydeploy import (
+    compile_js,
     compress_css,
     create_list_from_xml,
     )
@@ -38,4 +39,25 @@ class YUICompressorTest(unittest.TestCase):
     def test_compress_css_should_return_1_if_compression_is_unsuccessful(self, mock_subprocess):
         mock_subprocess.return_value = 1
         return_code = compress_css('fixtures/notfound.css')
+        self.assertEqual(return_code, 1)
+
+
+class ClosureCompilerTest(unittest.TestCase):
+
+    @mock.patch('subprocess.call')
+    def test_compile_js_should_call_compiler_with_correct_syntax(self, mock_subprocess):
+        compile_js('path')
+        mock_subprocess.assert_called_with(
+            ['java', '-jar', 'compiler.jar', '--js', 'path', '--js_output_file', 'path' + '.temp'])
+
+    @mock.patch('subprocess.call')
+    def test_compile_js_should_return_zero_if_compilation_is_successful(self, mock_subprocess):
+        mock_subprocess.return_value = 0
+        return_code = compile_js('fixtures/cells.js')
+        self.assertEqual(return_code, 0)
+
+    @mock.patch('subprocess.call')
+    def test_compile_js_should_return_1_if_compilation_is_unsuccessful(self, mock_subprocess):
+        mock_subprocess.return_value = 1
+        return_code = compile_js('fixtures/notfound.js')
         self.assertEqual(return_code, 1)
