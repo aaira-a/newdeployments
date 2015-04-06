@@ -29,15 +29,15 @@ class YUICompressorTest(unittest.TestCase):
         mock_subprocess.assert_called_with(
             ['java', '-jar', 'yuicompressor-2.4.8.jar', 'path', '-o', 'path' + '.temp'])
 
-    @mock.patch('subprocess.call')
-    def test_compress_css_should_return_zero_if_compression_is_successful(self, mock_subprocess):
-        mock_subprocess.return_value = 0
+    # @mock.patch('subprocess.call')
+    def test_compress_css_should_return_zero_if_compression_is_successful(self):
+        # mock_subprocess.return_value = 0
         return_code = compress_css('fixtures/styles.css')
         self.assertEqual(return_code, 0)
 
-    @mock.patch('subprocess.call')
-    def test_compress_css_should_return_1_if_compression_is_unsuccessful(self, mock_subprocess):
-        mock_subprocess.return_value = 1
+    # @mock.patch('subprocess.call')
+    def test_compress_css_should_return_1_if_compression_is_unsuccessful(self):
+        # mock_subprocess.return_value = 1
         return_code = compress_css('fixtures/notfound.css')
         self.assertEqual(return_code, 1)
 
@@ -50,14 +50,14 @@ class ClosureCompilerTest(unittest.TestCase):
         mock_subprocess.assert_called_with(
             ['java', '-jar', 'compiler.jar', '--js', 'path', '--js_output_file', 'path' + '.temp'])
 
-    @mock.patch('subprocess.call')
-    def test_compile_js_should_return_zero_if_compilation_is_successful(self, mock_subprocess):
-        mock_subprocess.return_value = 0
+    # @mock.patch('subprocess.call')
+    def test_compile_js_should_return_zero_if_compilation_is_successful(self):
+        # mock_subprocess.return_value = 0
         return_code = compile_js('fixtures/cells.js')
         self.assertEqual(return_code, 0)
 
-    @mock.patch('subprocess.call')
-    def test_compile_js_should_return_1_if_compilation_is_unsuccessful(self, mock_subprocess):
-        mock_subprocess.return_value = 1
+    # @mock.patch('subprocess.call')
+    def test_compile_js_should_return_1_if_compilation_is_unsuccessful(self):
+        # mock_subprocess.return_value = 1
         return_code = compile_js('fixtures/notfound.js')
         self.assertEqual(return_code, 1)
