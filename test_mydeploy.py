@@ -5,6 +5,7 @@ from mydeploy import (
     compile_js,
     compress_css,
     create_list_from_xml,
+    get_aws_credentials,
     gzip_file,
     )
 
@@ -83,3 +84,16 @@ class GZipTest(unittest.TestCase):
 
         os.remove(output_path)
         self.assertFalse(os.path.exists(output_path))
+
+
+class ConfigParserTest(unittest.TestCase):
+
+    def test_config_parser_returns_credential_from_file(self):
+        expected_test = ['testing_access_key', 'testing_secret_key']
+        self.assertEqual(get_aws_credentials('boto.cfg', 'testing'), expected_test)
+
+    def test_config_parser_returns_none_if_profile_is_not_specified(self):
+        self.assertIsNone(get_aws_credentials(path='boto.cfg'))
+
+    def test_config_parser_returns_none_if_file_is_not_specified(self):
+        self.assertIsNone(get_aws_credentials(profile='dev'))
