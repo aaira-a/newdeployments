@@ -1,4 +1,5 @@
 
+import boto
 import configparser
 import gzip
 import subprocess
@@ -44,3 +45,12 @@ def get_aws_credentials(path=None, profile=None):
         config.read(path)
         p = config[profile]
         return [p['aws_access_key_id'], p['aws_secret_access_key']]
+
+
+def check_if_file_exists_in_s3_bucket(path, bucket_, boto_cfg, profile):
+    cred = get_aws_credentials(boto_cfg, profile)
+    connection = boto.connect_s3(cred[0], cred[1])
+    bucket = connection.get_bucket(bucket_)
+    k = boto.s3.key.Key(bucket)
+    k.key = path
+    return k.exists()

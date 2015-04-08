@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 
 from mydeploy import (
+    check_if_file_exists_in_s3_bucket,
     compile_js,
     compress_css,
     create_list_from_xml,
@@ -9,6 +10,8 @@ from mydeploy import (
     gzip_file,
     )
 
+import boto
+import moto
 import os.path
 
 
@@ -97,3 +100,35 @@ class ConfigParserTest(unittest.TestCase):
 
     def test_config_parser_returns_none_if_file_is_not_specified(self):
         self.assertIsNone(get_aws_credentials(profile='dev'))
+
+
+class S3FileCheckerTest(unittest.TestCase):
+
+    @moto.mock_s3
+    def test_file_checker_returns_true_if_filename_exists_in_bucket(self):
+        path = 'a.txt'
+        bucket = 'mybucket567'
+        boto_cfg = 'boto.cfg'
+        profile = 'testing'
+
+        conn_moto = boto.connect_s3()
+        bucket_moto = conn_moto.create_bucket(bucket)
+        key_moto = boto.s3.key.Key(bucket_moto)
+        key_moto.key = 'a.txt'
+        key_moto.set_contents_from_string('teststring')
+
+        result = check_if_file_exists_in_s3_bucket(path, bucket, boto_cfg, profile)
+        self.assertTrue(result)
+
+    @moto.mock_s3
+    def test_file_checker_returns_false_if_filename_doesnt_exist_in_bucket(self):
+        path = 'a.txt'
+        bucket = 'mybucket567'
+        boto_cfg = 'boto.cfg'
+        profile = 'testing'
+
+        conn_moto = boto.connect_s3()
+        conn_moto.create_bucket(bucket)
+
+        result = check_if_file_exists_in_s3_bucket(path, bucket, boto_cfg, profile)
+        self.assertFalse(result)
