@@ -2,7 +2,7 @@ import unittest
 from unittest import mock
 
 from mydeploy import (
-    check_if_file_exists_in_s3_bucket,
+    file_exists_in_s3_bucket,
     compile_js,
     compress_css,
     create_list_from_xml,
@@ -106,29 +106,20 @@ class S3FileCheckerTest(unittest.TestCase):
 
     @moto.mock_s3
     def test_file_checker_returns_true_if_filename_exists_in_bucket(self):
-        path = 'a.txt'
-        bucket = 'mybucket567'
-        boto_cfg = 'boto.cfg'
-        profile = 'testing'
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
 
-        conn_moto = boto.connect_s3()
-        bucket_moto = conn_moto.create_bucket(bucket)
-        key_moto = boto.s3.key.Key(bucket_moto)
-        key_moto.key = 'a.txt'
-        key_moto.set_contents_from_string('teststring')
+        k = boto.s3.key.Key(bucket)
+        k.key = 'exists.txt'
+        k.set_contents_from_string('teststring')
 
-        result = check_if_file_exists_in_s3_bucket(path, bucket, boto_cfg, profile)
+        result = file_exists_in_s3_bucket('exists.txt', bucket)
         self.assertTrue(result)
 
     @moto.mock_s3
     def test_file_checker_returns_false_if_filename_doesnt_exist_in_bucket(self):
-        path = 'a.txt'
-        bucket = 'mybucket567'
-        boto_cfg = 'boto.cfg'
-        profile = 'testing'
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
 
-        conn_moto = boto.connect_s3()
-        conn_moto.create_bucket(bucket)
-
-        result = check_if_file_exists_in_s3_bucket(path, bucket, boto_cfg, profile)
+        result = file_exists_in_s3_bucket('doesnt_exist.txt', bucket)
         self.assertFalse(result)
