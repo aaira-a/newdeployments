@@ -47,6 +47,11 @@ def get_aws_credentials(path=None, profile=None):
         return [p['aws_access_key_id'], p['aws_secret_access_key']]
 
 
+def connect_to_bucket(access_key, secret_key, bucket):
+    connection = boto.connect_s3(access_key, secret_key)
+    return connection.get_bucket(bucket)
+
+
 def file_exists_in_s3_bucket(path, bucket):
     k = boto.s3.key.Key(bucket)
     k.key = path

@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 
 from mydeploy import (
+    connect_to_bucket,
     file_exists_in_s3_bucket,
     compile_js,
     compress_css,
@@ -100,6 +101,18 @@ class ConfigParserTest(unittest.TestCase):
 
     def test_config_parser_returns_none_if_file_is_not_specified(self):
         self.assertIsNone(get_aws_credentials(profile='dev'))
+
+
+class ConnectToS3BucketTest(unittest.TestCase):
+
+    @moto.mock_s3
+    def test_connect_to_valid_s3_bucket_using_correct_credential_should_return_correct_bucket_object(self):
+        connection = boto.connect_s3('key', 'secret')
+        connection.create_bucket('myrandombucket-0001')
+
+        bucket_reconnect = connect_to_bucket('key', 'secret', 'myrandombucket-0001')
+        self.assertIsInstance(bucket_reconnect, boto.s3.bucket.Bucket)
+        self.assertEqual(bucket_reconnect.name, 'myrandombucket-0001')
 
 
 class S3FileCheckerTest(unittest.TestCase):
