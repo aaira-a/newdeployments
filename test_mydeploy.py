@@ -119,7 +119,7 @@ class FileRenameTests(unittest.TestCase):
 class ConfigParserTest(unittest.TestCase):
 
     def test_config_parser_returns_credential_from_file(self):
-        expected_test = ['testing_access_key', 'testing_secret_key']
+        expected_test = {'id': 'testing_access_key', 'secret': 'testing_secret_key'}
         self.assertEqual(get_aws_credentials('boto.cfg', 'testing'), expected_test)
 
     def test_config_parser_returns_none_if_profile_is_not_specified(self):
@@ -136,7 +136,8 @@ class ConnectToS3BucketTest(unittest.TestCase):
         connection = boto.connect_s3('key', 'secret')
         connection.create_bucket('myrandombucket-0001')
 
-        bucket_reconnect = connect_to_bucket('key', 'secret', 'myrandombucket-0001')
+        profile = {'id': 'key', 'secret': 'secret'}
+        bucket_reconnect = connect_to_bucket(profile, 'myrandombucket-0001')
         self.assertIsInstance(bucket_reconnect, boto.s3.bucket.Bucket)
         self.assertEqual(bucket_reconnect.name, 'myrandombucket-0001')
 

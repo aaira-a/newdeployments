@@ -55,11 +55,11 @@ def get_aws_credentials(path=None, profile=None):
         config = configparser.ConfigParser()
         config.read(path)
         p = config[profile]
-        return [p['aws_access_key_id'], p['aws_secret_access_key']]
+        return {'id': p['aws_access_key_id'], 'secret': p['aws_secret_access_key']}
 
 
-def connect_to_bucket(access_key, secret_key, bucket):
-    connection = boto.connect_s3(access_key, secret_key)
+def connect_to_bucket(profile, bucket):
+    connection = boto.connect_s3(profile['id'], profile['secret'])
     return connection.get_bucket(bucket)
 
 
