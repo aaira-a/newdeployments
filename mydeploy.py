@@ -27,28 +27,28 @@ def deploy_main():
 
     for file_ in files:
 
-        file_name = BASE_PATH + file_[0]
+        file_path = BASE_PATH + file_[0]
         file_type = file_[1]
         file_version = file_[2]
 
         if file_type == 'css':
-            compress_css(file_name)
+            compress_css(file_path)
 
         elif file_type == 'js':
-            compile_js(file_name)
+            compile_js(file_path)
 
-        gzip_file(file_name + '.temp')
+        gzip_file(file_path + '.temp')
 
-        new_file_name_with_base_path = get_versioned_file_name(file_name + '.temp.gz', file_version, file_type)
-        rename_file(file_name + '.temp.gz', new_file_name_with_base_path)
+        versioned_file_path = get_versioned_file_name(file_path + '.temp.gz', file_version, file_type)
+        rename_file(file_path + '.temp.gz', versioned_file_path)
 
-        new_file_name_without_base_path = get_versioned_file_name(file_[0] + '.temp.gz', file_version, file_type)
+        versioned_file_path_without_base = get_versioned_file_name(file_[0] + '.temp.gz', file_version, file_type)
 
         if file_type == 'css':
-            upload_file_to_bucket(new_file_name_with_base_path, new_file_name_without_base_path, css_bucket)
+            upload_file_to_bucket(versioned_file_path, versioned_file_path_without_base, css_bucket)
 
         elif file_type == 'js':
-            upload_file_to_bucket(new_file_name_with_base_path, new_file_name_without_base_path, js_bucket)
+            upload_file_to_bucket(versioned_file_path, versioned_file_path_without_base, js_bucket)
 
 
 def create_list_from_xml(path):
