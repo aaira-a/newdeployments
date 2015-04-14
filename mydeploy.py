@@ -2,6 +2,8 @@
 import boto
 import configparser
 import gzip
+import os
+import re
 import subprocess
 import xml.etree.ElementTree as ET
 
@@ -34,6 +36,15 @@ def gzip_file(path):
     with open(path, 'rb') as input_file:
         with gzip.open(path + '.gz', 'wb') as output_file:
             output_file.writelines(input_file)
+
+
+def get_versioned_file_name(path_temp, version, file_type):
+    base_path = re.sub(r'\.(css|js)\.temp\.gz', '', path_temp)
+    return (base_path + '-' + version + '.' + file_type)
+
+
+def rename_file(source, destination):
+    os.rename(source, destination)
 
 
 def get_aws_credentials(path=None, profile=None):

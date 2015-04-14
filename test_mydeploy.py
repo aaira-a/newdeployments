@@ -8,7 +8,9 @@ from mydeploy import (
     compress_css,
     create_list_from_xml,
     get_aws_credentials,
+    get_versioned_file_name,
     gzip_file,
+    rename_file,
     )
 
 import boto
@@ -88,6 +90,29 @@ class GZipTest(unittest.TestCase):
 
         os.remove(output_path)
         self.assertFalse(os.path.exists(output_path))
+
+
+class FileRenameTests(unittest.TestCase):
+
+    def test_get_renamed_temp_gzipped_css_file(self):
+        self.assertEqual(get_versioned_file_name('abc.css.temp.gz', '9000', 'css'), 'abc-9000.css')
+
+    def test_get_renamed_temp_gzipped_js_file(self):
+        self.assertEqual(get_versioned_file_name('def.js.temp.gz', '9001', 'js'), 'def-9001.js')
+
+    def test_rename_file_and_revert_back(self):
+        source = 'fixtures/styles.css'
+        destination = 'fixtures/newstyles.css.with-different-extensions.temp.gz'
+        self.assertTrue(os.path.exists(source))
+        self.assertFalse(os.path.exists(destination))
+
+        rename_file(source, destination)
+        self.assertFalse(os.path.exists(source))
+        self.assertTrue(os.path.exists(destination))
+
+        rename_file(destination, source)
+        self.assertTrue(os.path.exists(source))
+        self.assertFalse(os.path.exists(destination))
 
 
 class ConfigParserTest(unittest.TestCase):
