@@ -8,6 +8,49 @@ import subprocess
 import xml.etree.ElementTree as ET
 
 
+AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
+AWS_PROFILE = ''        # name of aws profile from the config file to be used
+BASE_PATH = ''          # path of the repo www folder
+CSS_BUCKET = ''         # name of the css bucket
+JS_BUCKET = ''          # name of the js bucket
+XML_PATH = ''           # path of the xml file containing latest file versions
+
+
+def deploy_main():
+
+    cred = get_aws_credentials(AWS_CONFIG_PATH, AWS_PROFILE)
+
+    css_bucket = connect_to_bucket(cred, CSS_BUCKET)
+    js_bucket = connect_to_bucket(cred, JS_BUCKET)
+
+    files = create_list_from_xml(XML_PATH)
+
+    for file_ in files:
+
+        file_name = BASE_PATH + file_[0]
+        file_type = file_[1]
+        file_version = file_[2]
+
+        if file_type == 'css':
+            compress_css(file_name)
+
+        elif file_type == 'js':
+            compile_js(file_name)
+
+        gzip_file(file_name + '.temp')
+
+        new_file_name_with_base_path = get_versioned_file_name(file_name + '.temp.gz', file_version, file_type)
+        rename_file(file_name + '.temp.gz', new_file_name_with_base_path)
+
+        new_file_name_without_base_path = get_versioned_file_name(file_[0] + '.temp.gz', file_version, file_type)
+
+        if file_type == 'css':
+            upload_file_to_bucket(new_file_name_with_base_path, new_file_name_without_base_path, css_bucket)
+
+        elif file_type == 'js':
+            upload_file_to_bucket(new_file_name_with_base_path, new_file_name_without_base_path, js_bucket)
+
+
 def create_list_from_xml(path):
     tree = ET.parse(path)
     root = tree.getroot()

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<staticFiles>
+	<file url="css/common.css">
+		<fileType>css</fileType>
+		<fileVersion>1423532041</fileVersion>
+	</file>
+	<file url="js/apply.js">
+		<fileType>js</fileType>
+		<fileVersion>1408592767</fileVersion>
+	</file>
+</staticFiles>

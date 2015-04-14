@@ -14,6 +14,8 @@ from mydeploy import (
     upload_file_to_bucket,
     )
 
+import mydeploy
+
 import boto
 import moto
 import os.path
@@ -176,3 +178,31 @@ class UploadFileToS3Test(unittest.TestCase):
 
         result = file_exists_in_s3_bucket('styles.css', bucket)
         self.assertTrue(result)
+
+
+class DeploymentMainTest(unittest.TestCase):
+
+    @moto.mock_s3
+    def test_end_to_end_deploy_should_pass(self):
+
+        mydeploy.AWS_CONFIG_PATH = 'fixtures/end_to_end/boto2.cfg'
+        mydeploy.AWS_PROFILE = 'dev'
+        mydeploy.BASE_PATH = 'fixtures/end_to_end/'
+        mydeploy.CSS_BUCKET = 'myrandombucket-0001'
+        mydeploy.JS_BUCKET = 'myrandombucket-0002'
+        mydeploy.XML_PATH = 'fixtures/end_to_end/config/fileVersion2.xml'
+
+        connection = boto.connect_s3('key', 'secret')
+        bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
+        bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+
+        mydeploy.deploy_main()
+
+        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+        self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
+
+        os.remove('fixtures/end_to_end/css/common-1423532041.css')
+        os.remove('fixtures/end_to_end/js/apply-1408592767.js')
+
+        os.remove('fixtures/end_to_end/css/common.css.temp')
+        os.remove('fixtures/end_to_end/js/apply.js.temp')
