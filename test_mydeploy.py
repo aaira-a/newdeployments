@@ -11,6 +11,7 @@ from mydeploy import (
     get_versioned_file_name,
     gzip_file,
     rename_file,
+    upload_file_to_bucket,
     )
 
 import boto
@@ -161,3 +162,16 @@ class S3FileCheckerTest(unittest.TestCase):
 
         result = file_exists_in_s3_bucket('doesnt_exist.txt', bucket)
         self.assertFalse(result)
+
+
+class UploadFileToS3Test(unittest.TestCase):
+
+    @moto.mock_s3
+    def test_upload_to_s3_should_pass(self):
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
+
+        upload_file_to_bucket('fixtures/styles.css', bucket)
+
+        result = file_exists_in_s3_bucket('fixtures/styles.css', bucket)
+        self.assertTrue(result)

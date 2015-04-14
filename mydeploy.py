@@ -67,3 +67,9 @@ def file_exists_in_s3_bucket(path, bucket):
     k = boto.s3.key.Key(bucket)
     k.key = path
     return k.exists()
+
+
+def upload_file_to_bucket(path, bucket):
+    k = boto.s3.key.Key(bucket)
+    k.key = path
+    k.set_contents_from_filename(path)
