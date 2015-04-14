@@ -172,7 +172,7 @@ class UploadFileToS3Test(unittest.TestCase):
         connection = boto.connect_s3('key', 'secret')
         bucket = connection.create_bucket('mybucket567')
 
-        upload_file_to_bucket('fixtures/styles.css', bucket)
+        upload_file_to_bucket('fixtures/styles.css', 'styles.css', bucket)
 
-        result = file_exists_in_s3_bucket('fixtures/styles.css', bucket)
+        result = file_exists_in_s3_bucket('styles.css', bucket)
         self.assertTrue(result)
