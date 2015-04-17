@@ -126,4 +126,4 @@ def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, buck
                    'Content-Type': 'application/javascript',
                    'Cache-Control': 'max-age=31536000'}
 
-    k.set_contents_from_filename(source_path, headers=headers)
+    k.set_contents_from_filename(source_path, headers=headers, policy='public-read')

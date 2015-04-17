@@ -203,6 +203,18 @@ class UploadFileToS3Test(unittest.TestCase):
         self.assertIn('application/javascript', k.content_type)
         self.assertEqual(k.cache_control, 'max-age=31536000')
 
+    @unittest.skip('acl not implemented in moto yet, exception if executed')
+    def test_upload_to_s3_should_set_public_read_acl(self):
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
+
+        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', bucket)
+
+        k = bucket.get_key('cells.js')
+        policy = k.get_acl()
+        self.assertEqual(policy.acl.grants[1].uri, 'http://acs.amazonaws.com/groups/global/AllUsers')
+        self.assertEqual(policy.acl.grants[1].permission, 'READ')
+
 
 class DeploymentMainTest(unittest.TestCase):
 
