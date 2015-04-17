@@ -11,7 +11,7 @@ from mydeploy import (
     get_versioned_file_name,
     gzip_file,
     rename_file,
-    upload_file_to_bucket,
+    upload_gzipped_file_to_bucket,
     )
 
 import mydeploy
@@ -174,10 +174,34 @@ class UploadFileToS3Test(unittest.TestCase):
         connection = boto.connect_s3('key', 'secret')
         bucket = connection.create_bucket('mybucket567')
 
-        upload_file_to_bucket('fixtures/styles.css', 'styles.css', bucket)
+        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', bucket)
 
         result = file_exists_in_s3_bucket('styles.css', bucket)
         self.assertTrue(result)
+
+    @moto.mock_s3
+    def test_upload_css_to_s3_should_append_correct_headers(self):
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
+
+        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', bucket)
+
+        k = bucket.get_key('styles.css')
+        self.assertEqual(k.content_encoding, 'gzip')
+        self.assertIn('text/css', k.content_type)
+        self.assertEqual(k.cache_control, 'max-age=31536000')
+
+    @moto.mock_s3
+    def test_upload_js_to_s3_should_append_correct_headers(self):
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
+
+        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', bucket)
+
+        k = bucket.get_key('cells.js')
+        self.assertEqual(k.content_encoding, 'gzip')
+        self.assertIn('application/javascript', k.content_type)
+        self.assertEqual(k.cache_control, 'max-age=31536000')
 
 
 class DeploymentMainTest(unittest.TestCase):

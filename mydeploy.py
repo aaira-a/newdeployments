@@ -45,10 +45,10 @@ def deploy_main():
         versioned_file_path_without_base = get_versioned_file_name(file_[0] + '.temp.gz', file_version, file_type)
 
         if file_type == 'css':
-            upload_file_to_bucket(versioned_file_path, versioned_file_path_without_base, css_bucket)
+            upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, css_bucket)
 
         elif file_type == 'js':
-            upload_file_to_bucket(versioned_file_path, versioned_file_path_without_base, js_bucket)
+            upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, js_bucket)
 
 
 def create_list_from_xml(path):
@@ -112,7 +112,18 @@ def file_exists_in_s3_bucket(path, bucket):
     return k.exists()
 
 
-def upload_file_to_bucket(source_path, uploaded_as_path, bucket):
+def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, bucket):
     k = boto.s3.key.Key(bucket)
     k.key = uploaded_as_path
-    k.set_contents_from_filename(source_path)
+
+    if file_type == 'css':
+        headers = {'Content-Encoding': 'gzip',
+                   'Content-Type': 'text/css',
+                   'Cache-Control': 'max-age=31536000'}
+
+    elif file_type == 'js':
+        headers = {'Content-Encoding': 'gzip',
+                   'Content-Type': 'application/javascript',
+                   'Cache-Control': 'max-age=31536000'}
+
+    k.set_contents_from_filename(source_path, headers=headers)
