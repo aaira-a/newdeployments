@@ -228,6 +228,7 @@ class DeploymentMainTest(unittest.TestCase):
         mydeploy.BASE_PATH = 'fixtures/end_to_end/'
         mydeploy.CSS_BUCKET = 'myrandombucket-0001'
         mydeploy.JS_BUCKET = 'myrandombucket-0002'
+        mydeploy.MINIFIER_PATH = ''
         mydeploy.XML_PATH = 'fixtures/end_to_end/config/fileVersion2.xml'
 
         connection = boto.connect_s3('key', 'secret')

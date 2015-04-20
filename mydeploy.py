@@ -7,11 +7,12 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 
-
+# all paths are relative to jenkins job's workspace
 AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
 AWS_PROFILE = ''        # name of aws profile from the config file to be used
 BASE_PATH = ''          # path of the repo www folder
 CSS_BUCKET = ''         # name of the css bucket
+MINIFIER_PATH = ''      # path of the folder containing the minifiers binaries (closure compiler & yuicompressor)
 JS_BUCKET = ''          # name of the js bucket
 XML_PATH = ''           # path of the xml file containing latest file versions
 
@@ -78,11 +79,11 @@ def minify_file(path, file_type):
 
 
 def compress_css(path):
-    return subprocess.call(['java', '-jar', 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
+    return subprocess.call(['java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
 
 
 def compile_js(path):
-    return subprocess.call(['java', '-jar', 'compiler.jar', '--js', path, '--js_output_file', path + '.temp'])
+    return subprocess.call(['java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', path, '--js_output_file', path + '.temp'])
 
 
 def gzip_file(path):
