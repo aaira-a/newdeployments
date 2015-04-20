@@ -31,11 +31,7 @@ def deploy_main():
         file_type = file_[1]
         file_version = file_[2]
 
-        if file_type == 'css':
-            compress_css(file_path)
-
-        elif file_type == 'js':
-            compile_js(file_path)
+        minify_file(file_path, file_type)
 
         gzip_file(file_path + '.temp')
 
@@ -65,6 +61,14 @@ def create_list_from_xml(path):
         packed.append(sublist)
 
     return packed
+
+
+def minify_file(path, file_type):
+    if file_type == 'css':
+        compress_css(path)
+
+    elif file_type == 'js':
+        compile_js(path)
 
 
 def compress_css(path):
