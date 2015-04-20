@@ -17,6 +17,8 @@ from mydeploy import (
 import mydeploy
 
 import boto
+from contextlib import redirect_stdout
+import io
 import moto
 import os.path
 
@@ -232,7 +234,25 @@ class DeploymentMainTest(unittest.TestCase):
         bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
 
-        mydeploy.deploy_main()
+        out = io.StringIO()
+
+        with redirect_stdout(out):
+            mydeploy.deploy_main()
+        output = out.getvalue()
+
+        expected_string_outputs = [
+            'minified fixtures/end_to_end/css/common.css',
+            'gzipped fixtures/end_to_end/css/common.css.temp',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz into fixtures/end_to_end/css/common-1423532041.css',
+            'uploaded css/common-1423532041.css into myrandombucket-0001',
+            '',
+            'minified fixtures/end_to_end/js/apply.js',
+            'gzipped fixtures/end_to_end/js/apply.js.temp',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz into fixtures/end_to_end/js/apply-1408592767.js',
+            'uploaded js/apply-1408592767.js into myrandombucket-0002']
+
+        for line in expected_string_outputs:
+            self.assertIn(line, output)
 
         self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
         self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))

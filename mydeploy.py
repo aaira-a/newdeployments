@@ -31,20 +31,26 @@ def deploy_main():
         file_type = file_[1]
         file_version = file_[2]
 
+        print('\n')
         minify_file(file_path, file_type)
+        print('minified ' + file_path)
 
         gzip_file(file_path + '.temp')
+        print('gzipped ' + file_path + '.temp')
 
         versioned_file_path = get_versioned_file_name(file_path + '.temp.gz', file_version, file_type)
         rename_file(file_path + '.temp.gz', versioned_file_path)
+        print('renamed ' + file_path + '.temp.gz into ' + versioned_file_path)
 
         versioned_file_path_without_base = get_versioned_file_name(file_[0] + '.temp.gz', file_version, file_type)
 
         if file_type == 'css':
             upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, css_bucket)
+            print('uploaded ' + versioned_file_path_without_base + ' into ' + CSS_BUCKET)
 
         elif file_type == 'js':
             upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, js_bucket)
+            print('uploaded ' + versioned_file_path_without_base + ' into ' + JS_BUCKET)
 
 
 def create_list_from_xml(path):
