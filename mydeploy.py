@@ -13,6 +13,7 @@ AWS_PROFILE = ''        # name of aws profile from the config file to be used
 BASE_PATH = ''          # path of the repo www folder
 CSS_BUCKET = ''         # name of the css bucket
 MINIFIER_PATH = ''      # path of the folder containing the minifiers binaries (closure compiler & yuicompressor)
+JAVA_PATH = ''          # path of the folder containing java binary, may default to empty if already defined in system path
 JS_BUCKET = ''          # name of the js bucket
 XML_PATH = ''           # path of the xml file containing latest file versions
 
@@ -79,11 +80,11 @@ def minify_file(path, file_type):
 
 
 def compress_css(path):
-    return subprocess.call(['java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
+    return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
 
 
 def compile_js(path):
-    return subprocess.call(['java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', path, '--js_output_file', path + '.temp'])
+    return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', path, '--js_output_file', path + '.temp'])
 
 
 def gzip_file(path):
@@ -138,3 +139,7 @@ def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, buck
                    'Cache-Control': 'max-age=31536000'}
 
     k.set_contents_from_filename(source_path, headers=headers, policy='public-read')
+
+
+if __name__ == '__main__':
+    deploy_main()
