@@ -85,8 +85,10 @@ class ClosureCompilerTest(StaticFileTest):
 class GZipTest(StaticFileTest):
 
     def test_gzip_file_should_produce_smaller_file_than_original(self):
-        input_path = self.static_css.file_path
-        output_path = self.static_css.file_path + '.temp.gz'
+        self.static_css.minify_file()
+
+        input_path = self.static_css.minified_path
+        output_path = self.static_css.minified_path + '.gz'
 
         self.assertFalse(os.path.exists(output_path))
         self.static_css.gzip_file()
@@ -97,6 +99,7 @@ class GZipTest(StaticFileTest):
 
         self.assertLess(output_size, input_size)
 
+        os.remove(input_path)
         os.remove(output_path)
         self.assertFalse(os.path.exists(output_path))
 

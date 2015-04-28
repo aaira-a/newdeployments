@@ -40,11 +40,11 @@ def deploy_main():
         print('minified ' + file_object.file_path)
 
         file_object.gzip_file()
-        print('gzipped ' + file_object.file_path + '.temp')
+        print('gzipped ' + file_object.minified_path)
 
         versioned_file_path = file_object.get_versioned_file_name()
-        rename_file(file_path + '.temp.gz', versioned_file_path)
-        print('renamed ' + file_path + '.temp.gz into ' + versioned_file_path)
+        rename_file(file_object.gzipped_path, versioned_file_path)
+        print('renamed ' + file_object.gzipped_path + ' into ' + versioned_file_path)
 
         versioned_file_path_without_base = file_object.get_versioned_file_name(overriden_path=file_[0])
 
@@ -72,15 +72,18 @@ class StaticFile(object):
             self._compile_js()
 
     def _compress_css(self):
+        self.minified_path = self.file_path + '.temp'
         return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', self.file_path, '-o', self.file_path + '.temp'])
 
     def _compile_js(self):
+        self.minified_path = self.file_path + '.temp'
         return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', self.file_path, '--js_output_file', self.file_path + '.temp'])
 
     def gzip_file(self):
-        with open(self.file_path, 'rb') as input_file:
-            with gzip.open(self.file_path + '.temp.gz', 'wb') as output_file:
+        with open(self.minified_path, 'rb') as input_file:
+            with gzip.open(self.minified_path + '.gz', 'wb') as output_file:
                 output_file.writelines(input_file)
+        self.gzipped_path = self.minified_path + '.gz'
 
     def get_versioned_file_name(self, overriden_path=None):
         if overriden_path:
