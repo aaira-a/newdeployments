@@ -6,7 +6,6 @@ from mydeploy import (
     file_exists_in_s3_bucket,
     create_list_from_xml,
     get_aws_credentials,
-    get_versioned_file_name,
     rename_file,
     StaticFile,
     upload_gzipped_file_to_bucket,
@@ -102,13 +101,13 @@ class GZipTest(StaticFileTest):
         self.assertFalse(os.path.exists(output_path))
 
 
-class FileRenameTests(unittest.TestCase):
+class FileRenameTests(StaticFileTest):
 
     def test_get_renamed_temp_gzipped_css_file(self):
-        self.assertEqual(get_versioned_file_name('abc.css.temp.gz', '9000', 'css'), 'abc-9000.css')
+        self.assertEqual(self.static_css.get_versioned_file_name(), 'fixtures/styles-9001.css')
 
     def test_get_renamed_temp_gzipped_js_file(self):
-        self.assertEqual(get_versioned_file_name('def.js.temp.gz', '9001', 'js'), 'def-9001.js')
+        self.assertEqual(self.static_js.get_versioned_file_name(), 'fixtures/cells-9002.js')
 
     def test_rename_file_and_revert_back(self):
         source = 'fixtures/styles.css'

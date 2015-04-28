@@ -42,11 +42,11 @@ def deploy_main():
         file_object.gzip_file()
         print('gzipped ' + file_object.file_path + '.temp')
 
-        versioned_file_path = get_versioned_file_name(file_path + '.temp.gz', file_version, file_type)
+        versioned_file_path = file_object.get_versioned_file_name()
         rename_file(file_path + '.temp.gz', versioned_file_path)
         print('renamed ' + file_path + '.temp.gz into ' + versioned_file_path)
 
-        versioned_file_path_without_base = get_versioned_file_name(file_[0] + '.temp.gz', file_version, file_type)
+        versioned_file_path_without_base = file_object.get_versioned_file_name(overriden_path=file_[0])
 
         if file_type == 'css':
             upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, css_bucket)
@@ -82,6 +82,15 @@ class StaticFile(object):
             with gzip.open(self.file_path + '.temp.gz', 'wb') as output_file:
                 output_file.writelines(input_file)
 
+    def get_versioned_file_name(self, overriden_path=None):
+        if overriden_path:
+            input_path = overriden_path
+        else:
+            input_path = self.file_path
+
+        base_path = re.sub(r'\.(css|js)', '', input_path)
+        return (base_path + '-' + self.file_version + '.' + self.file_type)
+
 
 def create_list_from_xml(path):
     tree = ET.parse(path)
@@ -97,11 +106,6 @@ def create_list_from_xml(path):
         packed.append(sublist)
 
     return packed
-
-
-def get_versioned_file_name(path_temp, version, file_type):
-    base_path = re.sub(r'\.(css|js)\.temp\.gz', '', path_temp)
-    return (base_path + '-' + version + '.' + file_type)
 
 
 def rename_file(source, destination):
