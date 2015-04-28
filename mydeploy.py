@@ -33,12 +33,14 @@ def deploy_main():
         file_type = file_[1]
         file_version = file_[2]
 
-        print('\n')
-        minify_file(file_path, file_type)
-        print('minified ' + file_path)
+        file_object = StaticFile(file_path, file_type, file_version)
 
-        gzip_file(file_path + '.temp')
-        print('gzipped ' + file_path + '.temp')
+        print('\n')
+        file_object.minify_file()
+        print('minified ' + file_object.file_path)
+
+        file_object.gzip_file()
+        print('gzipped ' + file_object.file_path + '.temp')
 
         versioned_file_path = get_versioned_file_name(file_path + '.temp.gz', file_version, file_type)
         rename_file(file_path + '.temp.gz', versioned_file_path)
@@ -55,6 +57,32 @@ def deploy_main():
             print('uploaded ' + versioned_file_path_without_base + ' into ' + JS_BUCKET)
 
 
+class StaticFile(object):
+
+    def __init__(self, file_path, file_type, file_version):
+        self.file_path = file_path
+        self.file_type = file_type
+        self.file_version = file_version
+
+    def minify_file(self):
+        if self.file_type == 'css':
+            self._compress_css()
+
+        elif self.file_type == 'js':
+            self._compile_js()
+
+    def _compress_css(self):
+        return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', self.file_path, '-o', self.file_path + '.temp'])
+
+    def _compile_js(self):
+        return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', self.file_path, '--js_output_file', self.file_path + '.temp'])
+
+    def gzip_file(self):
+        with open(self.file_path, 'rb') as input_file:
+            with gzip.open(self.file_path + '.temp.gz', 'wb') as output_file:
+                output_file.writelines(input_file)
+
+
 def create_list_from_xml(path):
     tree = ET.parse(path)
     root = tree.getroot()
@@ -69,28 +97,6 @@ def create_list_from_xml(path):
         packed.append(sublist)
 
     return packed
-
-
-def minify_file(path, file_type):
-    if file_type == 'css':
-        compress_css(path)
-
-    elif file_type == 'js':
-        compile_js(path)
-
-
-def compress_css(path):
-    return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', path, '-o', path + '.temp'])
-
-
-def compile_js(path):
-    return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', path, '--js_output_file', path + '.temp'])
-
-
-def gzip_file(path):
-    with open(path, 'rb') as input_file:
-        with gzip.open(path + '.gz', 'wb') as output_file:
-            output_file.writelines(input_file)
 
 
 def get_versioned_file_name(path_temp, version, file_type):

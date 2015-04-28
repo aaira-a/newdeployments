@@ -4,13 +4,11 @@ from unittest import mock
 from mydeploy import (
     connect_to_bucket,
     file_exists_in_s3_bucket,
-    compile_js,
-    compress_css,
     create_list_from_xml,
     get_aws_credentials,
     get_versioned_file_name,
-    gzip_file,
     rename_file,
+    StaticFile,
     upload_gzipped_file_to_bucket,
     )
 
@@ -36,56 +34,63 @@ class XMLTest(unittest.TestCase):
             expected_list)
 
 
-class YUICompressorTest(unittest.TestCase):
+class StaticFileTest(unittest.TestCase):
+
+    def setUp(self):
+        self.static_css = StaticFile('fixtures/styles.css', 'css', '9001')
+        self.static_js = StaticFile('fixtures/cells.js', 'js', '9002')
+
+
+class YUICompressorTest(StaticFileTest):
 
     @mock.patch('subprocess.call')
     def test_compress_css_should_call_yuicompressor_with_correct_syntax(self, mock_subprocess):
-        compress_css('path')
+        self.static_css._compress_css()
         mock_subprocess.assert_called_with(
-            ['java', '-jar', 'yuicompressor-2.4.8.jar', 'path', '-o', 'path' + '.temp'])
+            ['java', '-jar', 'yuicompressor-2.4.8.jar', self.static_css.file_path, '-o', self.static_css.file_path + '.temp'])
 
     @mock.patch('subprocess.call')
     def test_compress_css_should_return_zero_if_compression_is_successful(self, mock_subprocess):
         mock_subprocess.return_value = 0
-        return_code = compress_css('fixtures/styles.css')
+        return_code = self.static_css._compress_css()
         self.assertEqual(return_code, 0)
 
     @mock.patch('subprocess.call')
     def test_compress_css_should_return_1_if_compression_is_unsuccessful(self, mock_subprocess):
         mock_subprocess.return_value = 1
-        return_code = compress_css('fixtures/notfound.css')
+        return_code = self.static_css._compress_css()
         self.assertEqual(return_code, 1)
 
 
-class ClosureCompilerTest(unittest.TestCase):
+class ClosureCompilerTest(StaticFileTest):
 
     @mock.patch('subprocess.call')
     def test_compile_js_should_call_compiler_with_correct_syntax(self, mock_subprocess):
-        compile_js('path')
+        self.static_js._compile_js()
         mock_subprocess.assert_called_with(
-            ['java', '-jar', 'compiler.jar', '--js', 'path', '--js_output_file', 'path' + '.temp'])
+            ['java', '-jar', 'compiler.jar', '--js', self.static_js.file_path, '--js_output_file', self.static_js.file_path + '.temp'])
 
     @mock.patch('subprocess.call')
     def test_compile_js_should_return_zero_if_compilation_is_successful(self, mock_subprocess):
         mock_subprocess.return_value = 0
-        return_code = compile_js('fixtures/cells.js')
+        return_code = self.static_js._compile_js()
         self.assertEqual(return_code, 0)
 
     @mock.patch('subprocess.call')
     def test_compile_js_should_return_1_if_compilation_is_unsuccessful(self, mock_subprocess):
         mock_subprocess.return_value = 1
-        return_code = compile_js('fixtures/notfound.js')
+        return_code = self.static_js._compile_js()
         self.assertEqual(return_code, 1)
 
 
-class GZipTest(unittest.TestCase):
+class GZipTest(StaticFileTest):
 
     def test_gzip_file_should_produce_smaller_file_than_original(self):
-        input_path = 'fixtures/styles.css'
-        output_path = 'fixtures/styles.css.gz'
+        input_path = self.static_css.file_path
+        output_path = self.static_css.file_path + '.temp.gz'
 
         self.assertFalse(os.path.exists(output_path))
-        gzip_file(input_path)
+        self.static_css.gzip_file()
         self.assertTrue(os.path.exists(output_path))
 
         input_size = os.path.getsize(input_path)
