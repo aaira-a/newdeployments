@@ -36,8 +36,8 @@ class XMLTest(unittest.TestCase):
 class StaticFileTest(unittest.TestCase):
 
     def setUp(self):
-        self.static_css = StaticFile('fixtures/styles.css', 'css', '9001')
-        self.static_js = StaticFile('fixtures/cells.js', 'js', '9002')
+        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001')
+        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002')
 
 
 class YUICompressorTest(StaticFileTest):
@@ -232,7 +232,7 @@ class DeploymentMainTest(unittest.TestCase):
 
         mydeploy.AWS_CONFIG_PATH = 'fixtures/end_to_end/boto2.cfg'
         mydeploy.AWS_PROFILE = 'dev'
-        mydeploy.BASE_PATH = 'fixtures/end_to_end/'
+        mydeploy.PREFIX_PATH = 'fixtures/end_to_end/'
         mydeploy.CSS_BUCKET = 'myrandombucket-0001'
         mydeploy.JAVA_PATH = ''
         mydeploy.JS_BUCKET = 'myrandombucket-0002'
