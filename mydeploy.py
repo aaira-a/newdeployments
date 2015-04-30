@@ -26,23 +26,12 @@ def deploy_main(force_process=False):
     js_bucket = connect_to_bucket(cred, JS_BUCKET)
 
     files = create_list_from_xml(XML_PATH)
-
-    items = []
-
-    for file_ in files:
-
-        file_path = file_[0]
-        file_type = file_[1]
-        file_version = file_[2]
-
-        f = StaticFile(PREFIX_PATH, file_path, file_type, file_version, css_bucket, js_bucket)
-
-        items.append(f)
+    file_objects = objectify_entries(files, css_bucket, js_bucket)
 
     if force_process is False:
-        items = [item for item in items if item.exists_in_bucket() == False]
+        file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
-    for f in items:
+    for f in file_objects:
 
         print('\n')
         f.minify_file()
@@ -56,6 +45,21 @@ def deploy_main(force_process=False):
 
         f.upload_file()
         print('uploaded ' + f.versioned_name + ' into ' + f.associated_bucket.name)
+
+
+def objectify_entries(entries_matrix, css_bucket, js_bucket):
+
+    items = []
+
+    for entry in entries_matrix:
+        file_path = entry[0]
+        file_type = entry[1]
+        file_version = entry[2]
+
+        f = StaticFile(PREFIX_PATH, file_path, file_type, file_version, css_bucket, js_bucket)
+        items.append(f)
+
+    return items
 
 
 class StaticFile(object):
