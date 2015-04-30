@@ -36,8 +36,8 @@ class XMLTest(unittest.TestCase):
 class StaticFileTest(unittest.TestCase):
 
     def setUp(self):
-        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001')
-        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002')
+        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001', '', '')
+        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '')
 
 
 class YUICompressorTest(StaticFileTest):
