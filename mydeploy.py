@@ -31,6 +31,10 @@ def deploy_main(force_process=False):
     if force_process is False:
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
+    process_files(file_objects)
+
+
+def process_files(file_objects):
     for f in file_objects:
 
         print('\n')
