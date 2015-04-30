@@ -51,26 +51,25 @@ def deploy_main():
 
 class StaticFile(object):
 
-    def __init__(self, prefix_path, file_path, file_type, file_version, css_bucket, js_bucket):
-        self.prefix_path = prefix_path
+    def __init__(self, prefix_path, file_path, type_, version, css_bucket, js_bucket):
         self.file_path = file_path
-        self.file_type = file_type
-        self.file_version = file_version
+        self.type_ = type_
+        self.version = version
         self.path_in_filesystem = prefix_path + file_path
         self.versioned_name = self._get_versioned_file_name(with_prefix=False)
         self.versioned_name_in_filesystem = self._get_versioned_file_name()
 
-        if file_type == 'css':
+        if type_ == 'css':
             self.associated_bucket = css_bucket
 
-        elif file_type == 'js':
+        elif type_ == 'js':
             self.associated_bucket = js_bucket
 
     def minify_file(self):
-        if self.file_type == 'css':
+        if self.type_ == 'css':
             self._compress_css()
 
-        elif self.file_type == 'js':
+        elif self.type_ == 'js':
             self._compile_js()
 
     def _compress_css(self):
@@ -94,10 +93,10 @@ class StaticFile(object):
             input_path = self.file_path
 
         base_path = re.sub(r'\.(css|js)', '', input_path)
-        return (base_path + '-' + self.file_version + '.' + self.file_type)
+        return (base_path + '-' + self.version + '.' + self.type_)
 
     def upload_file(self):
-        upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem, self.versioned_name, self.file_type, self.associated_bucket)
+        upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem, self.versioned_name, self.type_, self.associated_bucket)
 
 
 def create_list_from_xml(path):
