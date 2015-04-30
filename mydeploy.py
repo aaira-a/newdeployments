@@ -42,19 +42,16 @@ def deploy_main():
         file_object.gzip_file()
         print('gzipped ' + file_object.minified_path)
 
-        versioned_file_path = file_object.get_versioned_file_name()
-        rename_file(file_object.gzipped_path, versioned_file_path)
-        print('renamed ' + file_object.gzipped_path + ' into ' + versioned_file_path)
+        rename_file(file_object.gzipped_path, file_object.versioned_name_in_filesystem)
+        print('renamed ' + file_object.gzipped_path + ' into ' + file_object.versioned_name_in_filesystem)
 
-        versioned_file_path_without_base = file_object.get_versioned_file_name(with_prefix=False)
+        if file_object.file_type == 'css':
+            upload_gzipped_file_to_bucket(file_object.versioned_name_in_filesystem, file_object.versioned_name, file_object.file_type, css_bucket)
+            print('uploaded ' + file_object.versioned_name + ' into ' + CSS_BUCKET)
 
-        if file_type == 'css':
-            upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, css_bucket)
-            print('uploaded ' + versioned_file_path_without_base + ' into ' + CSS_BUCKET)
-
-        elif file_type == 'js':
-            upload_gzipped_file_to_bucket(versioned_file_path, versioned_file_path_without_base, file_type, js_bucket)
-            print('uploaded ' + versioned_file_path_without_base + ' into ' + JS_BUCKET)
+        elif file_object.file_type == 'js':
+            upload_gzipped_file_to_bucket(file_object.versioned_name_in_filesystem, file_object.versioned_name, file_object.file_type, js_bucket)
+            print('uploaded ' + file_object.versioned_name + ' into ' + JS_BUCKET)
 
 
 class StaticFile(object):
@@ -65,6 +62,8 @@ class StaticFile(object):
         self.file_type = file_type
         self.file_version = file_version
         self.path_in_filesystem = prefix_path + file_path
+        self.versioned_name = self._get_versioned_file_name(with_prefix=False)
+        self.versioned_name_in_filesystem = self._get_versioned_file_name()
 
     def minify_file(self):
         if self.file_type == 'css':
@@ -87,7 +86,7 @@ class StaticFile(object):
                 output_file.writelines(input_file)
         self.gzipped_path = self.minified_path + '.gz'
 
-    def get_versioned_file_name(self, with_prefix=True):
+    def _get_versioned_file_name(self, with_prefix=True):
         if with_prefix:
             input_path = self.path_in_filesystem
         else:

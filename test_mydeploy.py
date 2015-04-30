@@ -107,10 +107,10 @@ class GZipTest(StaticFileTest):
 class FileRenameTests(StaticFileTest):
 
     def test_get_renamed_temp_gzipped_css_file(self):
-        self.assertEqual(self.static_css.get_versioned_file_name(), 'fixtures/styles-9001.css')
+        self.assertEqual(self.static_css._get_versioned_file_name(), 'fixtures/styles-9001.css')
 
     def test_get_renamed_temp_gzipped_js_file(self):
-        self.assertEqual(self.static_js.get_versioned_file_name(), 'fixtures/cells-9002.js')
+        self.assertEqual(self.static_js._get_versioned_file_name(), 'fixtures/cells-9002.js')
 
     def test_rename_file_and_revert_back(self):
         source = 'fixtures/styles.css'
