@@ -27,31 +27,31 @@ def deploy_main():
 
     files = create_list_from_xml(XML_PATH)
 
-    for file_ in files:
+    for item in files:
 
-        file_path = file_[0]
-        file_type = file_[1]
-        file_version = file_[2]
+        file_path = item[0]
+        file_type = item[1]
+        file_version = item[2]
 
-        file_object = StaticFile(PREFIX_PATH, file_path, file_type, file_version)
+        f = StaticFile(PREFIX_PATH, file_path, file_type, file_version)
 
         print('\n')
-        file_object.minify_file()
-        print('minified ' + file_object.path_in_filesystem)
+        f.minify_file()
+        print('minified ' + f.path_in_filesystem)
 
-        file_object.gzip_file()
-        print('gzipped ' + file_object.minified_path)
+        f.gzip_file()
+        print('gzipped ' + f.minified_path)
 
-        rename_file(file_object.gzipped_path, file_object.versioned_name_in_filesystem)
-        print('renamed ' + file_object.gzipped_path + ' into ' + file_object.versioned_name_in_filesystem)
+        rename_file(f.gzipped_path, f.versioned_name_in_filesystem)
+        print('renamed ' + f.gzipped_path + ' into ' + f.versioned_name_in_filesystem)
 
-        if file_object.file_type == 'css':
-            upload_gzipped_file_to_bucket(file_object.versioned_name_in_filesystem, file_object.versioned_name, file_object.file_type, css_bucket)
-            print('uploaded ' + file_object.versioned_name + ' into ' + CSS_BUCKET)
+        if f.file_type == 'css':
+            upload_gzipped_file_to_bucket(f.versioned_name_in_filesystem, f.versioned_name, f.file_type, css_bucket)
+            print('uploaded ' + f.versioned_name + ' into ' + CSS_BUCKET)
 
-        elif file_object.file_type == 'js':
-            upload_gzipped_file_to_bucket(file_object.versioned_name_in_filesystem, file_object.versioned_name, file_object.file_type, js_bucket)
-            print('uploaded ' + file_object.versioned_name + ' into ' + JS_BUCKET)
+        elif f.file_type == 'js':
+            upload_gzipped_file_to_bucket(f.versioned_name_in_filesystem, f.versioned_name, f.file_type, js_bucket)
+            print('uploaded ' + f.versioned_name + ' into ' + JS_BUCKET)
 
 
 class StaticFile(object):
