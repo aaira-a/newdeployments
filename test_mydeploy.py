@@ -318,7 +318,7 @@ class DeploymentMainTest(unittest.TestCase):
         out = io.StringIO()
 
         with redirect_stdout(out):
-            mydeploy.deploy_main(force_process=True)
+            mydeploy.deploy_main(skip_existing=False)
         output = out.getvalue()
 
         expected_string_outputs = [

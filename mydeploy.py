@@ -18,7 +18,7 @@ JS_BUCKET = ''          # name of the js bucket
 XML_PATH = ''           # path of the xml file containing latest file versions
 
 
-def deploy_main(force_process=False):
+def deploy_main(skip_existing=True):
 
     cred = get_aws_credentials(AWS_CONFIG_PATH, AWS_PROFILE)
 
@@ -28,7 +28,7 @@ def deploy_main(force_process=False):
     files = create_list_from_xml(XML_PATH)
     file_objects = objectify_entries(files, css_bucket, js_bucket)
 
-    if force_process is False:
+    if skip_existing:
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
     process_files(file_objects)
