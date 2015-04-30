@@ -46,11 +46,11 @@ def deploy_main():
         print('renamed ' + f.gzipped_path + ' into ' + f.versioned_name_in_filesystem)
 
         if f.file_type == 'css':
-            upload_gzipped_file_to_bucket(f.versioned_name_in_filesystem, f.versioned_name, f.file_type, css_bucket)
+            f.upload_file(css_bucket)
             print('uploaded ' + f.versioned_name + ' into ' + CSS_BUCKET)
 
         elif f.file_type == 'js':
-            upload_gzipped_file_to_bucket(f.versioned_name_in_filesystem, f.versioned_name, f.file_type, js_bucket)
+            f.upload_file(js_bucket)
             print('uploaded ' + f.versioned_name + ' into ' + JS_BUCKET)
 
 
@@ -94,6 +94,13 @@ class StaticFile(object):
 
         base_path = re.sub(r'\.(css|js)', '', input_path)
         return (base_path + '-' + self.file_version + '.' + self.file_type)
+
+    def upload_file(self, bucket):
+        if self.file_type == 'css':
+            upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem, self.versioned_name, self.file_type, bucket)
+
+        elif self.file_type == 'js':
+            upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem, self.versioned_name, self.file_type, bucket)
 
 
 def create_list_from_xml(path):
