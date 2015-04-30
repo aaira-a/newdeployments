@@ -227,9 +227,7 @@ class UploadFileToS3Test(unittest.TestCase):
 
 class DeploymentMainTest(unittest.TestCase):
 
-    @moto.mock_s3
-    def test_end_to_end_deploy_should_pass(self):
-
+    def setUp(self):
         mydeploy.AWS_CONFIG_PATH = 'fixtures/end_to_end/boto2.cfg'
         mydeploy.AWS_PROFILE = 'dev'
         mydeploy.PREFIX_PATH = 'fixtures/end_to_end/'
@@ -239,6 +237,9 @@ class DeploymentMainTest(unittest.TestCase):
         mydeploy.MINIFIER_PATH = ''
         mydeploy.XML_PATH = 'fixtures/end_to_end/config/fileVersion2.xml'
 
+    @moto.mock_s3
+    def test_end_to_end_deploy_should_pass(self):
+
         connection = boto.connect_s3('key', 'secret')
         bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
@@ -247,6 +248,77 @@ class DeploymentMainTest(unittest.TestCase):
 
         with redirect_stdout(out):
             mydeploy.deploy_main()
+        output = out.getvalue()
+
+        expected_string_outputs = [
+            'minified fixtures/end_to_end/css/common.css',
+            'gzipped fixtures/end_to_end/css/common.css.temp',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz into fixtures/end_to_end/css/common-1423532041.css',
+            'uploaded css/common-1423532041.css into myrandombucket-0001',
+            '',
+            'minified fixtures/end_to_end/js/apply.js',
+            'gzipped fixtures/end_to_end/js/apply.js.temp',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz into fixtures/end_to_end/js/apply-1408592767.js',
+            'uploaded js/apply-1408592767.js into myrandombucket-0002']
+
+        for line in expected_string_outputs:
+            self.assertIn(line, output)
+
+        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+        self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
+
+        os.remove('fixtures/end_to_end/css/common-1423532041.css')
+        os.remove('fixtures/end_to_end/js/apply-1408592767.js')
+
+        os.remove('fixtures/end_to_end/css/common.css.temp')
+        os.remove('fixtures/end_to_end/js/apply.js.temp')
+
+    @moto.mock_s3
+    def test_end_to_end_should_skip_existing_file_in_default_mode(self):
+
+        connection = boto.connect_s3('key', 'secret')
+        bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
+        bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+
+        upload_gzipped_file_to_bucket('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
+        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+
+        out = io.StringIO()
+
+        with redirect_stdout(out):
+            mydeploy.deploy_main()
+        output = out.getvalue()
+
+        expected_string_outputs = [
+            'minified fixtures/end_to_end/js/apply.js',
+            'gzipped fixtures/end_to_end/js/apply.js.temp',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz into fixtures/end_to_end/js/apply-1408592767.js',
+            'uploaded js/apply-1408592767.js into myrandombucket-0002']
+
+        for line in expected_string_outputs:
+            self.assertIn(line, output)
+
+        self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
+
+        self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-1423532041.css'))
+
+        os.remove('fixtures/end_to_end/js/apply-1408592767.js')
+        os.remove('fixtures/end_to_end/js/apply.js.temp')
+
+    @moto.mock_s3
+    def test_end_to_end_should_force_process_all_files_if_explicitly_called(self):
+
+        connection = boto.connect_s3('key', 'secret')
+        bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
+        bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+
+        upload_gzipped_file_to_bucket('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
+        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+
+        out = io.StringIO()
+
+        with redirect_stdout(out):
+            mydeploy.deploy_main(force_process=True)
         output = out.getvalue()
 
         expected_string_outputs = [

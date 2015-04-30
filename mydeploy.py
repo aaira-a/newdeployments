@@ -18,7 +18,7 @@ JS_BUCKET = ''          # name of the js bucket
 XML_PATH = ''           # path of the xml file containing latest file versions
 
 
-def deploy_main():
+def deploy_main(force_process=False):
 
     cred = get_aws_credentials(AWS_CONFIG_PATH, AWS_PROFILE)
 
@@ -27,13 +27,22 @@ def deploy_main():
 
     files = create_list_from_xml(XML_PATH)
 
-    for item in files:
+    items = []
 
-        file_path = item[0]
-        file_type = item[1]
-        file_version = item[2]
+    for file_ in files:
+
+        file_path = file_[0]
+        file_type = file_[1]
+        file_version = file_[2]
 
         f = StaticFile(PREFIX_PATH, file_path, file_type, file_version, css_bucket, js_bucket)
+
+        items.append(f)
+
+    if force_process is False:
+        items = [item for item in items if item.exists_in_bucket() == False]
+
+    for f in items:
 
         print('\n')
         f.minify_file()
@@ -97,6 +106,9 @@ class StaticFile(object):
 
     def upload_file(self):
         upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem, self.versioned_name, self.type_, self.associated_bucket)
+
+    def exists_in_bucket(self):
+        return file_exists_in_s3_bucket(self.versioned_name, self.associated_bucket)
 
 
 def create_list_from_xml(path):
