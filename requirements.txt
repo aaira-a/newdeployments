@@ -1,3 +1,4 @@
 boto==2.37.0
 coverage==3.7.1
+coveralls
 moto==0.4.1

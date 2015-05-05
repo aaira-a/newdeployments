@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 # all paths are relative to jenkins job's workspace
 AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
 AWS_PROFILE = ''        # name of aws profile from the config file to be used
-PREFIX_PATH = ''          # path of the repo www folder
+PREFIX_PATH = ''        # path of the repo www folder
 CSS_BUCKET = ''         # name of the css bucket
 MINIFIER_PATH = ''      # path of the folder containing the minifiers binaries (closure compiler & yuicompressor)
 JAVA_PATH = ''          # path of the folder containing java binary, may default to empty if already defined in system path
