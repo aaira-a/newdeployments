@@ -31,28 +31,11 @@ def deploy_main(skip_existing=True):
     if skip_existing:
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
-    process_files(file_objects)
-
-
-def process_files(file_objects):
-    for f in file_objects:
-
-        print('\n')
-        f.minify()
-        print('minified ' + f.path_in_filesystem)
-
-        f.gzip()
-        print('gzipped ' + f.minified_path)
-
-        rename_file(f.gzipped_path, f.versioned_name_in_filesystem)
-        print('renamed ' + f.gzipped_path + ' into ' + f.versioned_name_in_filesystem)
-
-        f.upload()
-        print('uploaded ' + f.versioned_name_in_bucket + ' into ' + f.associated_bucket.name)
+    for item in file_objects:
+        item.process()
 
 
 def objectify_entries(entries_matrix, css_bucket, js_bucket):
-
     items = []
 
     for entry in entries_matrix:
@@ -84,6 +67,14 @@ class StaticFile(object):
         elif type_ == 'js':
             self.associated_bucket = js_bucket
 
+    def process(self):
+        print('\n')
+
+        self.minify()
+        self.gzip()
+        self.rename()
+        self.upload()
+
     def minify(self):
         input_ = self.path_in_filesystem
         self.minified_path = input_ + '.temp'
@@ -94,11 +85,14 @@ class StaticFile(object):
         elif self.type_ == 'js':
             compile_js(input_, self.minified_path)
 
+        print('minified ' + self.path_in_filesystem)
+
     def gzip(self):
         input_ = self.minified_path
         self.gzipped_path = input_ + '.gz'
 
         gzip_file(input_, self.gzipped_path)
+        print('gzipped ' + self.minified_path)
 
     def get_versioned_file_name(self, with_prefix=True):
         if with_prefix:
@@ -109,11 +103,17 @@ class StaticFile(object):
         base_path = re.sub(r'\.(css|js)', '', input_path)
         return (base_path + '-' + self.version + '.' + self.type_)
 
+    def rename(self):
+        os.rename(self.gzipped_path, self.versioned_name_in_filesystem)
+        print('renamed ' + self.gzipped_path + ' into ' + self.versioned_name_in_filesystem)
+
     def upload(self):
         upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem,
                                       self.versioned_name_in_bucket,
                                       self.type_,
                                       self.associated_bucket)
+
+        print('uploaded ' + self.versioned_name_in_bucket + ' into ' + self.associated_bucket.name)
 
     def exists_in_bucket(self):
         return file_exists_in_s3_bucket(self.versioned_name_in_bucket,
@@ -154,10 +154,6 @@ def gzip_file(input_, output):
     with open(input_, 'rb') as input_file:
         with gzip.open(output, 'wb') as output_file:
             output_file.writelines(input_file)
-
-
-def rename_file(source, destination):
-    os.rename(source, destination)
 
 
 def get_aws_credentials(path, profile):

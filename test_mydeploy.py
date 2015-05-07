@@ -9,7 +9,6 @@ from mydeploy import (
     file_exists_in_s3_bucket,
     create_list_from_xml,
     get_aws_credentials,
-    rename_file,
     StaticFile,
     upload_gzipped_file_to_bucket,
     )
@@ -118,11 +117,11 @@ class FileRenameTests(StaticFileTest):
         self.assertTrue(os.path.exists(source))
         self.assertFalse(os.path.exists(destination))
 
-        rename_file(source, destination)
+        os.rename(source, destination)
         self.assertFalse(os.path.exists(source))
         self.assertTrue(os.path.exists(destination))
 
-        rename_file(destination, source)
+        os.rename(destination, source)
         self.assertTrue(os.path.exists(source))
         self.assertFalse(os.path.exists(destination))
 
