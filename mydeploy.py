@@ -38,17 +38,17 @@ def process_files(file_objects):
     for f in file_objects:
 
         print('\n')
-        f.minify_file()
+        f.minify()
         print('minified ' + f.path_in_filesystem)
 
-        f.gzip_file()
+        f.gzip()
         print('gzipped ' + f.minified_path)
 
         rename_file(f.gzipped_path, f.versioned_name_in_filesystem)
         print('renamed ' + f.gzipped_path + ' into ' + f.versioned_name_in_filesystem)
 
-        f.upload_file()
-        print('uploaded ' + f.versioned_name + ' into ' + f.associated_bucket.name)
+        f.upload()
+        print('uploaded ' + f.versioned_name_in_bucket + ' into ' + f.associated_bucket.name)
 
 
 def objectify_entries(entries_matrix, css_bucket, js_bucket):
@@ -60,7 +60,9 @@ def objectify_entries(entries_matrix, css_bucket, js_bucket):
         file_type = entry[1]
         file_version = entry[2]
 
-        f = StaticFile(PREFIX_PATH, file_path, file_type, file_version, css_bucket, js_bucket)
+        f = StaticFile(PREFIX_PATH, file_path,
+                       file_type, file_version,
+                       css_bucket, js_bucket)
         items.append(f)
 
     return items
@@ -73,8 +75,8 @@ class StaticFile(object):
         self.type_ = type_
         self.version = version
         self.path_in_filesystem = prefix_path + file_path
-        self.versioned_name = self._get_versioned_file_name(with_prefix=False)
-        self.versioned_name_in_filesystem = self._get_versioned_file_name()
+        self.versioned_name_in_bucket = self.get_versioned_file_name(with_prefix=False)
+        self.versioned_name_in_filesystem = self.get_versioned_file_name(with_prefix=True)
 
         if type_ == 'css':
             self.associated_bucket = css_bucket
@@ -82,28 +84,23 @@ class StaticFile(object):
         elif type_ == 'js':
             self.associated_bucket = js_bucket
 
-    def minify_file(self):
+    def minify(self):
+        input_ = self.path_in_filesystem
+        self.minified_path = input_ + '.temp'
+
         if self.type_ == 'css':
-            self._compress_css()
+            compress_css(input_, self.minified_path)
 
         elif self.type_ == 'js':
-            self._compile_js()
+            compile_js(input_, self.minified_path)
 
-    def _compress_css(self):
-        self.minified_path = self.path_in_filesystem + '.temp'
-        return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'yuicompressor-2.4.8.jar', self.path_in_filesystem, '-o', self.path_in_filesystem + '.temp'])
+    def gzip(self):
+        input_ = self.minified_path
+        self.gzipped_path = input_ + '.gz'
 
-    def _compile_js(self):
-        self.minified_path = self.path_in_filesystem + '.temp'
-        return subprocess.call([JAVA_PATH + 'java', '-jar', MINIFIER_PATH + 'compiler.jar', '--js', self.path_in_filesystem, '--js_output_file', self.path_in_filesystem + '.temp'])
+        gzip_file(input_, self.gzipped_path)
 
-    def gzip_file(self):
-        with open(self.minified_path, 'rb') as input_file:
-            with gzip.open(self.minified_path + '.gz', 'wb') as output_file:
-                output_file.writelines(input_file)
-        self.gzipped_path = self.minified_path + '.gz'
-
-    def _get_versioned_file_name(self, with_prefix=True):
+    def get_versioned_file_name(self, with_prefix=True):
         if with_prefix:
             input_path = self.path_in_filesystem
         else:
@@ -112,11 +109,15 @@ class StaticFile(object):
         base_path = re.sub(r'\.(css|js)', '', input_path)
         return (base_path + '-' + self.version + '.' + self.type_)
 
-    def upload_file(self):
-        upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem, self.versioned_name, self.type_, self.associated_bucket)
+    def upload(self):
+        upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem,
+                                      self.versioned_name_in_bucket,
+                                      self.type_,
+                                      self.associated_bucket)
 
     def exists_in_bucket(self):
-        return file_exists_in_s3_bucket(self.versioned_name, self.associated_bucket)
+        return file_exists_in_s3_bucket(self.versioned_name_in_bucket,
+                                        self.associated_bucket)
 
 
 def create_list_from_xml(path):
@@ -135,19 +136,36 @@ def create_list_from_xml(path):
     return packed
 
 
+def compress_css(input_, output):
+    return subprocess.call([JAVA_PATH + 'java', '-jar',
+                            MINIFIER_PATH + 'yuicompressor-2.4.8.jar',
+                            input_,
+                            '-o', output])
+
+
+def compile_js(input_, output):
+    return subprocess.call([JAVA_PATH + 'java', '-jar',
+                            MINIFIER_PATH + 'compiler.jar',
+                            '--js', input_,
+                            '--js_output_file', output])
+
+
+def gzip_file(input_, output):
+    with open(input_, 'rb') as input_file:
+        with gzip.open(output, 'wb') as output_file:
+            output_file.writelines(input_file)
+
+
 def rename_file(source, destination):
     os.rename(source, destination)
 
 
-def get_aws_credentials(path=None, profile=None):
-    if profile is None or path is None:
-        return None
-
-    else:
-        config = configparser.ConfigParser()
-        config.read(path)
-        p = config[profile]
-        return {'id': p['aws_access_key_id'], 'secret': p['aws_secret_access_key']}
+def get_aws_credentials(path, profile):
+    config = configparser.ConfigParser()
+    config.read(path)
+    p = config[profile]
+    return {'id': p['aws_access_key_id'],
+            'secret': p['aws_secret_access_key']}
 
 
 def connect_to_bucket(profile, bucket):
