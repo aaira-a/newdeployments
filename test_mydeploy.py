@@ -242,15 +242,15 @@ class DeploymentMainTest(unittest.TestCase):
         output = out.getvalue()
 
         expected_string_outputs = [
-            'minified fixtures/end_to_end/css/common.css',
-            'gzipped fixtures/end_to_end/css/common.css.temp',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz into fixtures/end_to_end/css/common-1423532041.css',
-            'uploaded css/common-1423532041.css into myrandombucket-0001',
+            'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
+            'gzipped fixtures/end_to_end/css/common.css.temp -> fixtures/end_to_end/css/common.css.temp.gz',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-1423532041.css',
+            'uploaded css/common-1423532041.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-1423532041.css',
             '',
-            'minified fixtures/end_to_end/js/apply.js',
-            'gzipped fixtures/end_to_end/js/apply.js.temp',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz into fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js into myrandombucket-0002']
+            'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
+            'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
+            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
@@ -281,10 +281,10 @@ class DeploymentMainTest(unittest.TestCase):
         output = out.getvalue()
 
         expected_string_outputs = [
-            'minified fixtures/end_to_end/js/apply.js',
-            'gzipped fixtures/end_to_end/js/apply.js.temp',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz into fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js into myrandombucket-0002']
+            'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
+            'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
+            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
@@ -313,15 +313,15 @@ class DeploymentMainTest(unittest.TestCase):
         output = out.getvalue()
 
         expected_string_outputs = [
-            'minified fixtures/end_to_end/css/common.css',
-            'gzipped fixtures/end_to_end/css/common.css.temp',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz into fixtures/end_to_end/css/common-1423532041.css',
-            'uploaded css/common-1423532041.css into myrandombucket-0001',
+            'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
+            'gzipped fixtures/end_to_end/css/common.css.temp -> fixtures/end_to_end/css/common.css.temp.gz',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-1423532041.css',
+            'uploaded css/common-1423532041.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-1423532041.css',
             '',
-            'minified fixtures/end_to_end/js/apply.js',
-            'gzipped fixtures/end_to_end/js/apply.js.temp',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz into fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js into myrandombucket-0002']
+            'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
+            'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
+            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)

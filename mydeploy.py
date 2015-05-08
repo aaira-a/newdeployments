@@ -7,7 +7,7 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 
-# all paths are relative to jenkins job's workspace
+# all paths are relative to jenkins job's workspace (absolute path is fine too)
 AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
 AWS_PROFILE = ''        # name of aws profile from the config file to be used
 PREFIX_PATH = ''        # path of the repo www folder
@@ -85,14 +85,14 @@ class StaticFile(object):
         elif self.type_ == 'js':
             compile_js(input_, self.minified_path)
 
-        print('minified ' + self.path_in_filesystem)
+        print('minified ' + self.path_in_filesystem + ' -> ' + self.minified_path)
 
     def gzip(self):
         input_ = self.minified_path
         self.gzipped_path = input_ + '.gz'
 
         gzip_file(input_, self.gzipped_path)
-        print('gzipped ' + self.minified_path)
+        print('gzipped ' + self.minified_path + ' -> ' + self.gzipped_path)
 
     def get_versioned_file_path(self, with_prefix=True):
         if with_prefix:
@@ -105,7 +105,7 @@ class StaticFile(object):
 
     def rename(self):
         os.rename(self.gzipped_path, self.versioned_path_in_filesystem)
-        print('renamed ' + self.gzipped_path + ' into ' + self.versioned_path_in_filesystem)
+        print('renamed ' + self.gzipped_path + ' -> ' + self.versioned_path_in_filesystem)
 
     def upload(self):
         upload_gzipped_file_to_bucket(self.versioned_path_in_filesystem,
@@ -113,7 +113,7 @@ class StaticFile(object):
                                       self.type_,
                                       self.associated_bucket)
 
-        print('uploaded ' + self.versioned_path_in_bucket + ' into ' + self.associated_bucket.name)
+        print('uploaded ' + self.versioned_path_in_bucket + ' -> ' + 'http://' + self.associated_bucket.name + '.s3.amazonaws.com/' + self.versioned_path_in_bucket)
 
     def exists_in_bucket(self):
         return file_exists_in_s3_bucket(self.versioned_path_in_bucket,
