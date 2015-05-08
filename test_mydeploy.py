@@ -35,13 +35,6 @@ class XMLTest(unittest.TestCase):
             expected_list)
 
 
-class StaticFileTest(unittest.TestCase):
-
-    def setUp(self):
-        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001', '', '')
-        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '')
-
-
 class YUICompressorTest(unittest.TestCase):
 
     @mock.patch('subprocess.call')
@@ -103,13 +96,18 @@ class GZipTest(unittest.TestCase):
         self.assertFalse(os.path.exists(output_path))
 
 
-class FileRenameTests(StaticFileTest):
+class VersionedPathTest(unittest.TestCase):
 
-    def test_get_renamed_temp_gzipped_css_file(self):
-        self.assertEqual(self.static_css.get_versioned_file_name(), 'fixtures/styles-9001.css')
+    def test_get_versioned_path_from_css_file(self):
+        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001', '', '')
+        self.assertEqual(self.static_css.get_versioned_file_path(), 'fixtures/styles-9001.css')
 
-    def test_get_renamed_temp_gzipped_js_file(self):
-        self.assertEqual(self.static_js.get_versioned_file_name(), 'fixtures/cells-9002.js')
+    def test_get_versioned_path_from_js_file(self):
+        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '')
+        self.assertEqual(self.static_js.get_versioned_file_path(), 'fixtures/cells-9002.js')
+
+
+class FileRenameTest(unittest.TestCase):
 
     def test_rename_file_and_revert_back(self):
         source = 'fixtures/styles.css'

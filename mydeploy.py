@@ -58,8 +58,8 @@ class StaticFile(object):
         self.type_ = type_
         self.version = version
         self.path_in_filesystem = prefix_path + file_path
-        self.versioned_name_in_bucket = self.get_versioned_file_name(with_prefix=False)
-        self.versioned_name_in_filesystem = self.get_versioned_file_name(with_prefix=True)
+        self.versioned_path_in_bucket = self.get_versioned_file_path(with_prefix=False)
+        self.versioned_path_in_filesystem = self.get_versioned_file_path(with_prefix=True)
 
         if type_ == 'css':
             self.associated_bucket = css_bucket
@@ -94,7 +94,7 @@ class StaticFile(object):
         gzip_file(input_, self.gzipped_path)
         print('gzipped ' + self.minified_path)
 
-    def get_versioned_file_name(self, with_prefix=True):
+    def get_versioned_file_path(self, with_prefix=True):
         if with_prefix:
             input_path = self.path_in_filesystem
         else:
@@ -104,19 +104,19 @@ class StaticFile(object):
         return (base_path + '-' + self.version + '.' + self.type_)
 
     def rename(self):
-        os.rename(self.gzipped_path, self.versioned_name_in_filesystem)
-        print('renamed ' + self.gzipped_path + ' into ' + self.versioned_name_in_filesystem)
+        os.rename(self.gzipped_path, self.versioned_path_in_filesystem)
+        print('renamed ' + self.gzipped_path + ' into ' + self.versioned_path_in_filesystem)
 
     def upload(self):
-        upload_gzipped_file_to_bucket(self.versioned_name_in_filesystem,
-                                      self.versioned_name_in_bucket,
+        upload_gzipped_file_to_bucket(self.versioned_path_in_filesystem,
+                                      self.versioned_path_in_bucket,
                                       self.type_,
                                       self.associated_bucket)
 
-        print('uploaded ' + self.versioned_name_in_bucket + ' into ' + self.associated_bucket.name)
+        print('uploaded ' + self.versioned_path_in_bucket + ' into ' + self.associated_bucket.name)
 
     def exists_in_bucket(self):
-        return file_exists_in_s3_bucket(self.versioned_name_in_bucket,
+        return file_exists_in_s3_bucket(self.versioned_path_in_bucket,
                                         self.associated_bucket)
 
 
