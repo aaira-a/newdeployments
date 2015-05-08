@@ -10,11 +10,12 @@ import xml.etree.ElementTree as ET
 # all paths are relative to jenkins job's workspace (absolute path is fine too)
 AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
 AWS_PROFILE = ''        # name of aws profile from the config file to be used
-PREFIX_PATH = ''        # path of the repo www folder
 CSS_BUCKET = ''         # name of the css bucket
-MINIFIER_PATH = ''      # path of the folder containing the minifiers binaries (closure compiler & yuicompressor)
+IMAGE_BUCKET = ''       # name of the image bucket
 JAVA_PATH = ''          # path of the folder containing java binary, may default to empty if already defined in system path
 JS_BUCKET = ''          # name of the js bucket
+MINIFIER_PATH = ''      # path of the folder containing the minifiers binaries (closure compiler & yuicompressor)
+PREFIX_PATH = ''        # path of the repo www folder
 XML_PATH = ''           # path of the xml file containing latest file versions
 
 
@@ -24,9 +25,10 @@ def deploy_main(skip_existing=True):
 
     css_bucket = connect_to_bucket(cred, CSS_BUCKET)
     js_bucket = connect_to_bucket(cred, JS_BUCKET)
+    image_bucket = connect_to_bucket(cred, IMAGE_BUCKET)
 
     files = create_list_from_xml(XML_PATH)
-    file_objects = objectify_entries(files, css_bucket, js_bucket)
+    file_objects = objectify_entries(files, css_bucket, js_bucket, image_bucket)
 
     if skip_existing:
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
@@ -35,7 +37,7 @@ def deploy_main(skip_existing=True):
         item.process()
 
 
-def objectify_entries(entries_matrix, css_bucket, js_bucket):
+def objectify_entries(entries_matrix, css_bucket, js_bucket, image_bucket):
     items = []
 
     for entry in entries_matrix:
@@ -45,7 +47,7 @@ def objectify_entries(entries_matrix, css_bucket, js_bucket):
 
         f = StaticFile(PREFIX_PATH, file_path,
                        file_type, file_version,
-                       css_bucket, js_bucket)
+                       css_bucket, js_bucket, image_bucket)
         items.append(f)
 
     return items
@@ -53,7 +55,7 @@ def objectify_entries(entries_matrix, css_bucket, js_bucket):
 
 class StaticFile(object):
 
-    def __init__(self, prefix_path, file_path, type_, version, css_bucket, js_bucket):
+    def __init__(self, prefix_path, file_path, type_, version, css_bucket, js_bucket, image_bucket):
         self.file_path = file_path
         self.type_ = type_
         self.version = version
@@ -67,11 +69,17 @@ class StaticFile(object):
         elif type_ == 'js':
             self.associated_bucket = js_bucket
 
+        elif type_ == 'image':
+            self.associated_bucket = image_bucket
+            self.gzipped_path = self.path_in_filesystem
+
     def process(self):
         print('\n')
 
-        self.minify()
-        self.gzip()
+        if self.type_ == 'css' or self.type_ == 'js':
+            self.minify()
+            self.gzip()
+
         self.rename()
         self.upload()
 
@@ -188,6 +196,9 @@ def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, buck
         headers = {'Content-Encoding': 'gzip',
                    'Content-Type': 'application/javascript',
                    'Cache-Control': 'max-age=31536000'}
+
+    elif file_type == 'image':
+        headers = {'Cache-Control': str.encode('max-age=31536000, no transform, public')}
 
     k.set_contents_from_filename(source_path, headers=headers, policy='public-read')
 

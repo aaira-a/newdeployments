@@ -99,27 +99,27 @@ class GZipTest(unittest.TestCase):
 class VersionedPathTest(unittest.TestCase):
 
     def test_get_versioned_path_from_css_file(self):
-        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001', '', '')
+        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001', '', '', '')
         self.assertEqual(self.static_css.get_versioned_file_path(), 'fixtures/styles-9001.css')
 
     def test_get_versioned_path_from_js_file(self):
-        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '')
+        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '', '')
         self.assertEqual(self.static_js.get_versioned_file_path(), 'fixtures/cells-9002.js')
 
     def test_get_versioned_path_from_gif_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image001.gif', 'image', '9003', '', '')
+        self.static_image = StaticFile('', 'fixtures/image001.gif', 'image', '9003', '', '', '')
         self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image001-9003.gif')
 
     def test_get_versioned_path_from_jpg_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image002.jpg', 'image', '9004', '', '')
+        self.static_image = StaticFile('', 'fixtures/image002.jpg', 'image', '9004', '', '', '')
         self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image002-9004.jpg')
 
     def test_get_versioned_path_from_jpeg_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image003.jpeg', 'image', '9005', '', '')
+        self.static_image = StaticFile('', 'fixtures/image003.jpeg', 'image', '9005', '', '', '')
         self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image003-9005.jpeg')
 
     def test_get_versioned_path_from_png_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image004.png', 'image', '9006', '', '')
+        self.static_image = StaticFile('', 'fixtures/image004.png', 'image', '9006', '', '', '')
         self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image004-9006.png')
 
 
@@ -219,6 +219,16 @@ class UploadFileToS3Test(unittest.TestCase):
         self.assertIn('application/javascript', k.content_type)
         self.assertEqual(k.cache_control, 'max-age=31536000')
 
+    @moto.mock_s3
+    def test_upload_image_to_s3_should_append_correct_headers(self):
+        connection = boto.connect_s3('key', 'secret')
+        bucket = connection.create_bucket('mybucket567')
+
+        upload_gzipped_file_to_bucket('fixtures/logo.png', 'logo.png', 'image', bucket)
+
+        k = bucket.get_key('logo.png')
+        self.assertEqual(k.cache_control, "max-age=31536000, no transform, public")
+
     @unittest.skip('acl not implemented in moto yet, exception if executed')
     def test_upload_to_s3_should_set_public_read_acl(self):
         connection = boto.connect_s3('key', 'secret')
@@ -237,11 +247,12 @@ class DeploymentMainTest(unittest.TestCase):
     def setUp(self):
         mydeploy.AWS_CONFIG_PATH = 'fixtures/end_to_end/boto2.cfg'
         mydeploy.AWS_PROFILE = 'dev'
-        mydeploy.PREFIX_PATH = 'fixtures/end_to_end/'
         mydeploy.CSS_BUCKET = 'myrandombucket-0001'
+        mydeploy.IMAGE_BUCKET = 'myrandombucket-0003'
         mydeploy.JAVA_PATH = ''
         mydeploy.JS_BUCKET = 'myrandombucket-0002'
         mydeploy.MINIFIER_PATH = ''
+        mydeploy.PREFIX_PATH = 'fixtures/end_to_end/'
         mydeploy.XML_PATH = 'fixtures/end_to_end/config/fileVersion2.xml'
 
     @moto.mock_s3
@@ -250,6 +261,7 @@ class DeploymentMainTest(unittest.TestCase):
         connection = boto.connect_s3('key', 'secret')
         bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+        bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
 
         out = io.StringIO()
 
@@ -266,13 +278,17 @@ class DeploymentMainTest(unittest.TestCase):
             'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
             'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
             'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js']
+            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js'
+            '',
+            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-140845665.png',
+            'uploaded images/image001-140845665.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-140845665.png']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
         self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
         self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
+        self.assertTrue(file_exists_in_s3_bucket('images/image001-140845665.png', bucket_image))
 
         os.remove('fixtures/end_to_end/css/common-1423532041.css')
         os.remove('fixtures/end_to_end/js/apply-1408592767.js')
@@ -280,15 +296,21 @@ class DeploymentMainTest(unittest.TestCase):
         os.remove('fixtures/end_to_end/css/common.css.temp')
         os.remove('fixtures/end_to_end/js/apply.js.temp')
 
+        os.rename('fixtures/end_to_end/images/image001-140845665.png', 'fixtures/end_to_end/images/image001.png')
+
     @moto.mock_s3
     def test_end_to_end_should_skip_existing_file_in_default_mode(self):
 
         connection = boto.connect_s3('key', 'secret')
         bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+        bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
 
         upload_gzipped_file_to_bucket('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
         self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+
+        upload_gzipped_file_to_bucket('fixtures/end_to_end/images/image001.png', 'images/image001-140845665.png', 'image', bucket_image)
+        self.assertTrue(file_exists_in_s3_bucket('images/image001-140845665.png', bucket_image))
 
         out = io.StringIO()
 
@@ -318,6 +340,7 @@ class DeploymentMainTest(unittest.TestCase):
         connection = boto.connect_s3('key', 'secret')
         bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+        bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
 
         upload_gzipped_file_to_bucket('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
         self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
@@ -337,16 +360,22 @@ class DeploymentMainTest(unittest.TestCase):
             'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
             'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
             'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js']
+            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js',
+            '',
+            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-140845665.png',
+            'uploaded images/image001-140845665.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-140845665.png']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
         self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
         self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
+        self.assertTrue(file_exists_in_s3_bucket('images/image001-140845665.png', bucket_image))
 
         os.remove('fixtures/end_to_end/css/common-1423532041.css')
         os.remove('fixtures/end_to_end/js/apply-1408592767.js')
 
         os.remove('fixtures/end_to_end/css/common.css.temp')
         os.remove('fixtures/end_to_end/js/apply.js.temp')
+
+        os.rename('fixtures/end_to_end/images/image001-140845665.png', 'fixtures/end_to_end/images/image001.png')
