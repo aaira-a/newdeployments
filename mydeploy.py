@@ -100,8 +100,8 @@ class StaticFile(object):
         else:
             input_path = self.file_path
 
-        base_path = re.sub(r'\.(css|js)', '', input_path)
-        return (base_path + '-' + self.version + '.' + self.type_)
+        split = re.search(r'(.*)\.(css|js|gif|jpg|jpeg|png)$', input_path).groups()
+        return (split[0] + '-' + self.version + '.' + split[1])
 
     def rename(self):
         os.rename(self.gzipped_path, self.versioned_path_in_filesystem)

@@ -106,6 +106,22 @@ class VersionedPathTest(unittest.TestCase):
         self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '')
         self.assertEqual(self.static_js.get_versioned_file_path(), 'fixtures/cells-9002.js')
 
+    def test_get_versioned_path_from_gif_image_file(self):
+        self.static_image = StaticFile('', 'fixtures/image001.gif', 'image', '9003', '', '')
+        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image001-9003.gif')
+
+    def test_get_versioned_path_from_jpg_image_file(self):
+        self.static_image = StaticFile('', 'fixtures/image002.jpg', 'image', '9004', '', '')
+        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image002-9004.jpg')
+
+    def test_get_versioned_path_from_jpeg_image_file(self):
+        self.static_image = StaticFile('', 'fixtures/image003.jpeg', 'image', '9005', '', '')
+        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image003-9005.jpeg')
+
+    def test_get_versioned_path_from_png_image_file(self):
+        self.static_image = StaticFile('', 'fixtures/image004.png', 'image', '9006', '', '')
+        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image004-9006.png')
+
 
 class FileRenameTest(unittest.TestCase):
 
