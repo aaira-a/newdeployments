@@ -31,7 +31,7 @@ In continuous deployment environment for web applications, mismatches between ap
 - Windows - developed and tested on Windows. The development and Jenkins machines are Windows. Untested on other platforms
 - Why open-source this? - Some poor souls in alternate universes may have the same need and actually thought that this solution would be optimal
 
-- Cleanup for previous outdated file versions on the S3 buckets is yet to be implemented (to-do)
+- Cleanup for previous outdated file versions on the S3 buckets is <del>yet to be implemented (to-do)</del> [implemented](https://github.com/azam-a/newdeployments/blob/master/mycleanup.py)
 
 ## Setup steps (into machine running Jenkins):
 

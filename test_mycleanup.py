@@ -5,8 +5,16 @@ from mycleanup import (
     is_matching_versioned_pattern,
     )
 
+import mycleanup
+
+from mydeploy import (
+    file_exists_in_s3_bucket as exists,
+    upload_gzipped_file_to_bucket as upload,
+    )
 
 import boto
+from contextlib import redirect_stdout
+import io
 import moto
 
 
@@ -56,3 +64,63 @@ class GetMatchingKeysIntegrationTest(unittest.TestCase):
 
         result3 = get_all_matching_keys(bucket, 'prefix3')
         self.assertIn('prefix3/d/file6-23.png', result3[0].key)
+
+
+class CleanupMainIntegrationTest(unittest.TestCase):
+
+    @moto.mock_s3
+    def test_end_to_end_cleanup_should_delete_files_with_matching_pattern(self):
+
+        mycleanup.AWS_CONFIG_PATH = 'fixtures/end_to_end/boto2.cfg'
+        mycleanup.AWS_PROFILE = 'dev'
+        mycleanup.CSS_BUCKET = 'myrandombucket-0001'
+        mycleanup.IMAGE_BUCKET = 'myrandombucket-0003'
+        mycleanup.JS_BUCKET = 'myrandombucket-0002'
+        mycleanup.CSS_PREFIX = 'css/'
+        mycleanup.IMAGE_PREFIX = 'images/'
+        mycleanup.JS_PREFIX = 'scripts/'
+
+        connection = boto.connect_s3('key', 'secret')
+        bucket_css = connection.create_bucket(mycleanup.CSS_BUCKET)
+        bucket_js = connection.create_bucket(mycleanup.JS_BUCKET)
+        bucket_image = connection.create_bucket(mycleanup.IMAGE_BUCKET)
+
+        upload('fixtures/end_to_end/css/common.css', 'css/common-13241.css', 'css', bucket_css)
+        self.assertTrue(exists('css/common-13241.css', bucket_css))
+
+        upload('fixtures/end_to_end/js/apply.js', 'scripts/apply-14442.js', 'js', bucket_js)
+        self.assertTrue(exists('scripts/apply-14442.js', bucket_js))
+
+        upload('fixtures/end_to_end/images/image001.png', 'images/image001-14665.png', 'image', bucket_image)
+        self.assertTrue(exists('images/image001-14665.png', bucket_image))
+
+        upload('fixtures/end_to_end/css/common.css', 'css/nottobedeleted.css', 'css', bucket_css)
+        self.assertTrue(exists('css/nottobedeleted.css', bucket_css))
+
+        upload('fixtures/end_to_end/js/apply.js', 'scripts/nottobedeleted.js', 'js', bucket_js)
+        self.assertTrue(exists('scripts/nottobedeleted.js', bucket_js))
+
+        upload('fixtures/end_to_end/images/image001.png', 'images/nottobedeleted.png', 'image', bucket_image)
+        self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
+
+        out = io.StringIO()
+
+        with redirect_stdout(out):
+            mycleanup.cleanup_main()
+        output = out.getvalue()
+
+        expected_string_outputs = [
+            'Deleted http://myrandombucket-0001.s3.amazonaws.com/css/common-13241.css',
+            'Deleted http://myrandombucket-0002.s3.amazonaws.com/scripts/apply-14442.js',
+            'Deleted http://myrandombucket-0003.s3.amazonaws.com/images/image001-14665.png']
+
+        for line in expected_string_outputs:
+            self.assertIn(line, output)
+
+        self.assertFalse(exists('css/common-13241.css', bucket_css))
+        self.assertFalse(exists('scripts/apply-14442.js', bucket_js))
+        self.assertFalse(exists('images/image001-14665.png', bucket_image))
+
+        self.assertTrue(exists('css/nottobedeleted.css', bucket_css))
+        self.assertTrue(exists('scripts/nottobedeleted.js', bucket_js))
+        self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
