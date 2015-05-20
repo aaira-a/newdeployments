@@ -21,20 +21,31 @@ XML_PATH = ''           # path of the xml file containing latest file versions
 
 def deploy_main(skip_existing=True):
 
-    cred = get_aws_credentials(AWS_CONFIG_PATH, AWS_PROFILE)
-
-    css_bucket = connect_to_bucket(cred, CSS_BUCKET)
-    js_bucket = connect_to_bucket(cred, JS_BUCKET)
-    image_bucket = connect_to_bucket(cred, IMAGE_BUCKET)
-
-    files = create_list_from_xml(XML_PATH)
-    file_objects = objectify_entries(files, css_bucket, js_bucket, image_bucket)
+    file_objects = get_file_objects(AWS_CONFIG_PATH, AWS_PROFILE,
+                                    CSS_BUCKET, JS_BUCKET, IMAGE_BUCKET,
+                                    XML_PATH)
 
     if skip_existing:
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
     for item in file_objects:
         item.process()
+
+
+def get_file_objects(aws_config_path, aws_profile,
+                     css_bucket_name, js_bucket_name, image_bucket_name,
+                     xml_path):
+
+    cred = get_aws_credentials(aws_config_path, aws_profile)
+
+    css_bucket = connect_to_bucket(cred, css_bucket_name)
+    js_bucket = connect_to_bucket(cred, js_bucket_name)
+    image_bucket = connect_to_bucket(cred, image_bucket_name)
+
+    files = create_list_from_xml(xml_path)
+    file_objects = objectify_entries(files, css_bucket, js_bucket, image_bucket)
+
+    return file_objects
 
 
 def objectify_entries(entries_matrix, css_bucket, js_bucket, image_bucket):
@@ -121,7 +132,8 @@ class StaticFile(object):
                                       self.type_,
                                       self.associated_bucket)
 
-        print('uploaded ' + self.versioned_path_in_bucket + ' -> ' + 'http://' + self.associated_bucket.name + '.s3.amazonaws.com/' + self.versioned_path_in_bucket)
+        print('uploaded ' + self.versioned_path_in_bucket + ' -> ' +
+              'http://' + self.associated_bucket.name + '.s3.amazonaws.com/' + self.versioned_path_in_bucket)
 
     def exists_in_bucket(self):
         return file_exists_in_s3_bucket(self.versioned_path_in_bucket,

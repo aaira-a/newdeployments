@@ -79,6 +79,7 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         mycleanup.CSS_PREFIX = 'css/'
         mycleanup.IMAGE_PREFIX = 'images/'
         mycleanup.JS_PREFIX = 'scripts/'
+        mycleanup.XML_PATH = 'fixtures/end_to_end/config/fileVersion3.xml'
 
         connection = boto.connect_s3('key', 'secret')
         bucket_css = connection.create_bucket(mycleanup.CSS_BUCKET)
@@ -103,6 +104,9 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         upload('fixtures/end_to_end/images/image001.png', 'images/nottobedeleted.png', 'image', bucket_image)
         self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
 
+        upload('fixtures/end_to_end/css/to_persist_cleanup.css', 'css/to_persist_cleanup-9000.css', 'css', bucket_css)
+        self.assertTrue(exists('css/to_persist_cleanup-9000.css', bucket_css))
+
         out = io.StringIO()
 
         with redirect_stdout(out):
@@ -112,7 +116,9 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         expected_string_outputs = [
             'Deleted http://myrandombucket-0001.s3.amazonaws.com/css/common-13241.css',
             'Deleted http://myrandombucket-0002.s3.amazonaws.com/scripts/apply-14442.js',
-            'Deleted http://myrandombucket-0003.s3.amazonaws.com/images/image001-14665.png']
+            'Deleted http://myrandombucket-0003.s3.amazonaws.com/images/image001-14665.png',
+            'Skipping deletion of http://myrandombucket-0001.s3.amazonaws.com/css/to_persist_cleanup-9000.css, '
+            'currently indexed in XML file']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
@@ -124,3 +130,5 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         self.assertTrue(exists('css/nottobedeleted.css', bucket_css))
         self.assertTrue(exists('scripts/nottobedeleted.js', bucket_js))
         self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
+
+        self.assertTrue(exists('css/to_persist_cleanup-9000.css', bucket_css))
