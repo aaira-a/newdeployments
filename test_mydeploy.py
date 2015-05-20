@@ -147,96 +147,73 @@ class ConfigParserTest(unittest.TestCase):
         self.assertEqual(get_aws_credentials('fixtures/boto.cfg', 'testing'), expected_cred)
 
 
-class ConnectToS3BucketTest(unittest.TestCase):
+@moto.mock_s3
+class MotoBucketBaseTestClass(unittest.TestCase):
 
-    @moto.mock_s3
+    def setUp(self):
+        connection = boto.connect_s3('key', 'secret')
+        self.bucket = connection.create_bucket('mybucket567')
+
+
+class ConnectToS3BucketTest(MotoBucketBaseTestClass):
+
     def test_connect_to_valid_s3_bucket_using_correct_credential_should_return_correct_bucket_object(self):
-        connection = boto.connect_s3('key', 'secret')
-        connection.create_bucket('myrandombucket-0001')
-
         profile = {'id': 'key', 'secret': 'secret'}
-        bucket_reconnect = connect_to_bucket(profile, 'myrandombucket-0001')
+        bucket_reconnect = connect_to_bucket(profile, 'mybucket567')
         self.assertIsInstance(bucket_reconnect, boto.s3.bucket.Bucket)
-        self.assertEqual(bucket_reconnect.name, 'myrandombucket-0001')
+        self.assertEqual(bucket_reconnect.name, 'mybucket567')
 
 
-class S3FileCheckerTest(unittest.TestCase):
+class S3FileCheckerTest(MotoBucketBaseTestClass):
 
-    @moto.mock_s3
     def test_file_checker_returns_true_if_filename_exists_in_bucket(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
-
-        k = boto.s3.key.Key(bucket)
+        k = boto.s3.key.Key(self.bucket)
         k.key = 'exists.txt'
         k.set_contents_from_string('teststring')
 
-        result = file_exists_in_s3_bucket('exists.txt', bucket)
+        result = file_exists_in_s3_bucket('exists.txt', self.bucket)
         self.assertTrue(result)
 
-    @moto.mock_s3
     def test_file_checker_returns_false_if_filename_doesnt_exist_in_bucket(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
-
-        result = file_exists_in_s3_bucket('doesnt_exist.txt', bucket)
+        result = file_exists_in_s3_bucket('doesnt_exist.txt', self.bucket)
         self.assertFalse(result)
 
 
-class UploadFileToS3Test(unittest.TestCase):
+class UploadFileToS3Test(MotoBucketBaseTestClass):
 
-    @moto.mock_s3
     def test_upload_to_s3_should_pass(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
+        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', self.bucket)
 
-        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', bucket)
-
-        result = file_exists_in_s3_bucket('styles.css', bucket)
+        result = file_exists_in_s3_bucket('styles.css', self.bucket)
         self.assertTrue(result)
 
-    @moto.mock_s3
     def test_upload_css_to_s3_should_append_correct_headers(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
+        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', self.bucket)
 
-        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', bucket)
-
-        k = bucket.get_key('styles.css')
+        k = self.bucket.get_key('styles.css')
         self.assertEqual(k.content_encoding, 'gzip')
         self.assertIn('text/css', k.content_type)
         self.assertEqual(k.cache_control, 'max-age=31536000')
 
-    @moto.mock_s3
     def test_upload_js_to_s3_should_append_correct_headers(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
+        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', self.bucket)
 
-        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', bucket)
-
-        k = bucket.get_key('cells.js')
+        k = self.bucket.get_key('cells.js')
         self.assertEqual(k.content_encoding, 'gzip')
         self.assertIn('application/javascript', k.content_type)
         self.assertEqual(k.cache_control, 'max-age=31536000')
 
-    @moto.mock_s3
     def test_upload_image_to_s3_should_append_correct_headers(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
+        upload_gzipped_file_to_bucket('fixtures/logo.png', 'logo.png', 'image', self.bucket)
 
-        upload_gzipped_file_to_bucket('fixtures/logo.png', 'logo.png', 'image', bucket)
-
-        k = bucket.get_key('logo.png')
+        k = self.bucket.get_key('logo.png')
         self.assertEqual(k.cache_control, "max-age=31536000, no transform, public")
 
     @unittest.skip('acl not implemented in moto yet, exception if executed')
     def test_upload_to_s3_should_set_public_read_acl(self):
-        connection = boto.connect_s3('key', 'secret')
-        bucket = connection.create_bucket('mybucket567')
+        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', self.bucket)
 
-        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', bucket)
-
-        k = bucket.get_key('cells.js')
+        k = self.bucket.get_key('cells.js')
         policy = k.get_acl()
         self.assertEqual(policy.acl.grants[1].uri, 'http://acs.amazonaws.com/groups/global/AllUsers')
         self.assertEqual(policy.acl.grants[1].permission, 'READ')
