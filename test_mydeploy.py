@@ -6,11 +6,11 @@ from mydeploy import (
     compress_css,
     gzip_file,
     connect_to_bucket,
-    file_exists_in_s3_bucket,
+    file_exists_in_s3_bucket as exists,
     create_list_from_xml,
     get_aws_credentials,
     StaticFile,
-    upload_gzipped_file_to_bucket,
+    upload_gzipped_file_to_bucket as upload,
     )
 
 import mydeploy
@@ -98,29 +98,32 @@ class GZipTest(unittest.TestCase):
 
 class VersionedPathTest(unittest.TestCase):
 
+    def factory(self, path, type_, version):
+        return StaticFile('', path, type_, version, '', '', '')
+
     def test_get_versioned_path_from_css_file(self):
-        self.static_css = StaticFile('', 'fixtures/styles.css', 'css', '9001', '', '', '')
-        self.assertEqual(self.static_css.get_versioned_file_path(), 'fixtures/styles-9001.css')
+        static_css = self.factory('fixtures/styles.css', 'css', '9001')
+        self.assertEqual(static_css.get_versioned_file_path(), 'fixtures/styles-9001.css')
 
     def test_get_versioned_path_from_js_file(self):
-        self.static_js = StaticFile('', 'fixtures/cells.js', 'js', '9002', '', '', '')
-        self.assertEqual(self.static_js.get_versioned_file_path(), 'fixtures/cells-9002.js')
+        static_js = self.factory('fixtures/cells.js', 'js', '9002')
+        self.assertEqual(static_js.get_versioned_file_path(), 'fixtures/cells-9002.js')
 
     def test_get_versioned_path_from_gif_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image001.gif', 'image', '9003', '', '', '')
-        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image001-9003.gif')
+        static_image = self.factory('fixtures/image001.gif', 'image', '9003')
+        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image001-9003.gif')
 
     def test_get_versioned_path_from_jpg_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image002.jpg', 'image', '9004', '', '', '')
-        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image002-9004.jpg')
+        static_image = self.factory('fixtures/image002.jpg', 'image', '9004')
+        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image002-9004.jpg')
 
     def test_get_versioned_path_from_jpeg_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image003.jpeg', 'image', '9005', '', '', '')
-        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image003-9005.jpeg')
+        static_image = self.factory('fixtures/image003.jpeg', 'image', '9005')
+        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image003-9005.jpeg')
 
     def test_get_versioned_path_from_png_image_file(self):
-        self.static_image = StaticFile('', 'fixtures/image004.png', 'image', '9006', '', '', '')
-        self.assertEqual(self.static_image.get_versioned_file_path(), 'fixtures/image004-9006.png')
+        static_image = self.factory('fixtures/image004.png', 'image', '9006')
+        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image004-9006.png')
 
 
 class FileRenameTest(unittest.TestCase):
@@ -171,24 +174,24 @@ class S3FileCheckerTest(MotoBucketBaseTestClass):
         k.key = 'exists.txt'
         k.set_contents_from_string('teststring')
 
-        result = file_exists_in_s3_bucket('exists.txt', self.bucket)
+        result = exists('exists.txt', self.bucket)
         self.assertTrue(result)
 
     def test_file_checker_returns_false_if_filename_doesnt_exist_in_bucket(self):
-        result = file_exists_in_s3_bucket('doesnt_exist.txt', self.bucket)
+        result = exists('doesnt_exist.txt', self.bucket)
         self.assertFalse(result)
 
 
 class UploadFileToS3Test(MotoBucketBaseTestClass):
 
     def test_upload_to_s3_should_pass(self):
-        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', self.bucket)
+        upload('fixtures/styles_gzipped.css', 'styles.css', 'css', self.bucket)
 
-        result = file_exists_in_s3_bucket('styles.css', self.bucket)
+        result = exists('styles.css', self.bucket)
         self.assertTrue(result)
 
     def test_upload_css_to_s3_should_append_correct_headers(self):
-        upload_gzipped_file_to_bucket('fixtures/styles_gzipped.css', 'styles.css', 'css', self.bucket)
+        upload('fixtures/styles_gzipped.css', 'styles.css', 'css', self.bucket)
 
         k = self.bucket.get_key('styles.css')
         self.assertEqual(k.content_encoding, 'gzip')
@@ -196,7 +199,7 @@ class UploadFileToS3Test(MotoBucketBaseTestClass):
         self.assertEqual(k.cache_control, 'max-age=31536000')
 
     def test_upload_js_to_s3_should_append_correct_headers(self):
-        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', self.bucket)
+        upload('fixtures/cells_gzipped.js', 'cells.js', 'js', self.bucket)
 
         k = self.bucket.get_key('cells.js')
         self.assertEqual(k.content_encoding, 'gzip')
@@ -204,14 +207,14 @@ class UploadFileToS3Test(MotoBucketBaseTestClass):
         self.assertEqual(k.cache_control, 'max-age=31536000')
 
     def test_upload_image_to_s3_should_append_correct_headers(self):
-        upload_gzipped_file_to_bucket('fixtures/logo.png', 'logo.png', 'image', self.bucket)
+        upload('fixtures/logo.png', 'logo.png', 'image', self.bucket)
 
         k = self.bucket.get_key('logo.png')
         self.assertEqual(k.cache_control, "max-age=31536000, no transform, public")
 
     @unittest.skip('acl not implemented in moto yet, exception if executed')
     def test_upload_to_s3_should_set_public_read_acl(self):
-        upload_gzipped_file_to_bucket('fixtures/cells_gzipped.js', 'cells.js', 'js', self.bucket)
+        upload('fixtures/cells_gzipped.js', 'cells.js', 'js', self.bucket)
 
         k = self.bucket.get_key('cells.js')
         policy = k.get_acl()
@@ -263,9 +266,9 @@ class DeploymentMainTest(unittest.TestCase):
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
-        self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
-        self.assertTrue(file_exists_in_s3_bucket('images/image001-140845665.png', bucket_image))
+        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
+        self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
+        self.assertTrue(exists('images/image001-140845665.png', bucket_image))
 
         os.remove('fixtures/end_to_end/css/common-1423532041.css')
         os.remove('fixtures/end_to_end/js/apply-1408592767.js')
@@ -283,11 +286,11 @@ class DeploymentMainTest(unittest.TestCase):
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
         bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
 
-        upload_gzipped_file_to_bucket('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
-        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
+        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
 
-        upload_gzipped_file_to_bucket('fixtures/end_to_end/images/image001.png', 'images/image001-140845665.png', 'image', bucket_image)
-        self.assertTrue(file_exists_in_s3_bucket('images/image001-140845665.png', bucket_image))
+        upload('fixtures/end_to_end/images/image001.png', 'images/image001-140845665.png', 'image', bucket_image)
+        self.assertTrue(exists('images/image001-140845665.png', bucket_image))
 
         out = io.StringIO()
 
@@ -304,7 +307,7 @@ class DeploymentMainTest(unittest.TestCase):
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
+        self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
 
         self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-1423532041.css'))
 
@@ -319,8 +322,8 @@ class DeploymentMainTest(unittest.TestCase):
         bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
         bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
 
-        upload_gzipped_file_to_bucket('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
-        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
+        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
 
         out = io.StringIO()
 
@@ -345,9 +348,9 @@ class DeploymentMainTest(unittest.TestCase):
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(file_exists_in_s3_bucket('css/common-1423532041.css', bucket_css))
-        self.assertTrue(file_exists_in_s3_bucket('js/apply-1408592767.js', bucket_js))
-        self.assertTrue(file_exists_in_s3_bucket('images/image001-140845665.png', bucket_image))
+        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
+        self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
+        self.assertTrue(exists('images/image001-140845665.png', bucket_image))
 
         os.remove('fixtures/end_to_end/css/common-1423532041.css')
         os.remove('fixtures/end_to_end/js/apply-1408592767.js')
