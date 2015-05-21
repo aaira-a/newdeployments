@@ -7,16 +7,17 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 
-# all paths are relative to jenkins job's workspace (absolute path is fine too)
-AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
-AWS_PROFILE = ''        # name of aws profile from the config file to be used
-CSS_BUCKET = ''         # name of the css bucket
-IMAGE_BUCKET = ''       # name of the image bucket
-JAVA_PATH = ''          # path of the folder containing java binary, may default to empty if already defined in system path
-JS_BUCKET = ''          # name of the js bucket
-MINIFIER_PATH = ''      # path of the folder containing the minifiers binaries (closure compiler & yuicompressor)
-PREFIX_PATH = ''        # path of the repo www folder
-XML_PATH = ''           # path of the xml file containing latest file versions
+from environment_config import (
+    AWS_CONFIG_PATH,
+    AWS_PROFILE,
+    CSS_BUCKET,
+    IMAGE_BUCKET,
+    JS_BUCKET,
+    PREFIX_PATH,
+    XML_PATH,
+    JAVA_PATH,
+    MINIFIER_PATH,
+    )
 
 
 def deploy_main(skip_existing=True):

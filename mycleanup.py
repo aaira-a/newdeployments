@@ -7,21 +7,17 @@ from mydeploy import (
     get_file_objects,
     )
 
-# all paths are relative to jenkins job's workspace (absolute path is fine too)
-AWS_CONFIG_PATH = ''    # path to config file (ini format) containing aws credentials
-AWS_PROFILE = ''        # name of aws profile from the config file to be used
-XML_PATH = ''           # path of the xml file containing latest file versions
-
-# name of buckets for connection purposes
-CSS_BUCKET = ''
-IMAGE_BUCKET = ''
-JS_BUCKET = ''
-
-# prefix of base path in buckets (eg, base folder name)
-# to narrow down selections during bucket.list() operations
-CSS_PREFIX = ''
-IMAGE_PREFIX = ''
-JS_PREFIX = ''
+from environment_config import (
+    AWS_CONFIG_PATH,
+    AWS_PROFILE,
+    CSS_BUCKET,
+    IMAGE_BUCKET,
+    JS_BUCKET,
+    CSS_PREFIX,
+    IMAGE_PREFIX,
+    JS_PREFIX,
+    XML_PATH
+    )
 
 
 def cleanup_main():
