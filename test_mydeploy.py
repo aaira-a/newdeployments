@@ -258,19 +258,30 @@ class DeploymentMainTest(unittest.TestCase):
         except:
             pass
 
-    @moto.mock_s3
-    def test_end_to_end_deploy_should_pass(self):
+    def initialise_buckets(self):
 
         connection = boto.connect_s3('key', 'secret')
-        bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
-        bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
-        bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
+        self.bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
+        self.bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
+        self.bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
 
+    def execute(self, skip_existing=None):
         out = io.StringIO()
 
         with redirect_stdout(out):
-            mydeploy.deploy_main()
-        output = out.getvalue()
+            if skip_existing is not None:
+                mydeploy.deploy_main(skip_existing)
+            else:
+                mydeploy.deploy_main()
+
+        return out.getvalue()
+
+    @moto.mock_s3
+    def test_end_to_end_deploy_should_process_and_upload_files_in_xml(self):
+
+        self.initialise_buckets()
+
+        output = self.execute()
 
         expected_string_outputs = [
             'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
@@ -289,29 +300,22 @@ class DeploymentMainTest(unittest.TestCase):
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
-        self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
-        self.assertTrue(exists('images/image001-140845665.png', bucket_image))
+        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
+        self.assertTrue(exists('js/apply-1408592767.js', self.bucket_js))
+        self.assertTrue(exists('images/image001-140845665.png', self.bucket_image))
 
     @moto.mock_s3
-    def test_end_to_end_should_skip_existing_file_in_default_mode(self):
+    def test_end_to_end_should_skip_existing_file_in_s3_in_default_mode(self):
 
-        connection = boto.connect_s3('key', 'secret')
-        bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
-        bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
-        bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
+        self.initialise_buckets()
 
-        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
-        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', self.bucket_css)
+        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
 
-        upload('fixtures/end_to_end/images/image001.png', 'images/image001-140845665.png', 'image', bucket_image)
-        self.assertTrue(exists('images/image001-140845665.png', bucket_image))
+        upload('fixtures/end_to_end/images/image001.png', 'images/image001-140845665.png', 'image', self.bucket_image)
+        self.assertTrue(exists('images/image001-140845665.png', self.bucket_image))
 
-        out = io.StringIO()
-
-        with redirect_stdout(out):
-            mydeploy.deploy_main()
-        output = out.getvalue()
+        output = self.execute()
 
         expected_string_outputs = [
             'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
@@ -322,7 +326,7 @@ class DeploymentMainTest(unittest.TestCase):
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
+        self.assertTrue(exists('js/apply-1408592767.js', self.bucket_js))
 
         self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-1423532041.css'))
         self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-140845665.png'))
@@ -330,19 +334,12 @@ class DeploymentMainTest(unittest.TestCase):
     @moto.mock_s3
     def test_end_to_end_should_force_process_all_files_if_explicitly_called(self):
 
-        connection = boto.connect_s3('key', 'secret')
-        bucket_css = connection.create_bucket(mydeploy.CSS_BUCKET)
-        bucket_js = connection.create_bucket(mydeploy.JS_BUCKET)
-        bucket_image = connection.create_bucket(mydeploy.IMAGE_BUCKET)
+        self.initialise_buckets()
 
-        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', bucket_css)
-        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', self.bucket_css)
+        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
 
-        out = io.StringIO()
-
-        with redirect_stdout(out):
-            mydeploy.deploy_main(skip_existing=False)
-        output = out.getvalue()
+        output = self.execute(skip_existing=False)
 
         expected_string_outputs = [
             'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
@@ -361,6 +358,6 @@ class DeploymentMainTest(unittest.TestCase):
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(exists('css/common-1423532041.css', bucket_css))
-        self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
-        self.assertTrue(exists('images/image001-140845665.png', bucket_image))
+        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
+        self.assertTrue(exists('js/apply-1408592767.js', self.bucket_js))
+        self.assertTrue(exists('images/image001-140845665.png', self.bucket_image))
