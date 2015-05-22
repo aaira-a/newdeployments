@@ -235,6 +235,29 @@ class DeploymentMainTest(unittest.TestCase):
         mydeploy.PREFIX_PATH = 'fixtures/end_to_end/'
         mydeploy.XML_PATH = 'fixtures/end_to_end/config/fileVersion2.xml'
 
+    def tearDown(self):
+
+        paths_to_cleanup = [
+            'fixtures/end_to_end/css/common.css.temp',
+            'fixtures/end_to_end/css/common.css.temp.gz',
+            'fixtures/end_to_end/css/common-1423532041.css',
+            'fixtures/end_to_end/js/apply.js.temp',
+            'fixtures/end_to_end/js/apply.js.temp.gz',
+            'fixtures/end_to_end/js/apply-1408592767.js',
+            ]
+
+        for path in paths_to_cleanup:
+            try:
+                os.remove(path)
+            except:
+                pass
+
+        try:
+            os.rename('fixtures/end_to_end/images/image001-140845665.png',
+                      'fixtures/end_to_end/images/image001.png')
+        except:
+            pass
+
     @moto.mock_s3
     def test_end_to_end_deploy_should_pass(self):
 
@@ -270,14 +293,6 @@ class DeploymentMainTest(unittest.TestCase):
         self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
         self.assertTrue(exists('images/image001-140845665.png', bucket_image))
 
-        os.remove('fixtures/end_to_end/css/common-1423532041.css')
-        os.remove('fixtures/end_to_end/js/apply-1408592767.js')
-
-        os.remove('fixtures/end_to_end/css/common.css.temp')
-        os.remove('fixtures/end_to_end/js/apply.js.temp')
-
-        os.rename('fixtures/end_to_end/images/image001-140845665.png', 'fixtures/end_to_end/images/image001.png')
-
     @moto.mock_s3
     def test_end_to_end_should_skip_existing_file_in_default_mode(self):
 
@@ -310,9 +325,7 @@ class DeploymentMainTest(unittest.TestCase):
         self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
 
         self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-1423532041.css'))
-
-        os.remove('fixtures/end_to_end/js/apply-1408592767.js')
-        os.remove('fixtures/end_to_end/js/apply.js.temp')
+        self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-140845665.png'))
 
     @moto.mock_s3
     def test_end_to_end_should_force_process_all_files_if_explicitly_called(self):
@@ -351,11 +364,3 @@ class DeploymentMainTest(unittest.TestCase):
         self.assertTrue(exists('css/common-1423532041.css', bucket_css))
         self.assertTrue(exists('js/apply-1408592767.js', bucket_js))
         self.assertTrue(exists('images/image001-140845665.png', bucket_image))
-
-        os.remove('fixtures/end_to_end/css/common-1423532041.css')
-        os.remove('fixtures/end_to_end/js/apply-1408592767.js')
-
-        os.remove('fixtures/end_to_end/css/common.css.temp')
-        os.remove('fixtures/end_to_end/js/apply.js.temp')
-
-        os.rename('fixtures/end_to_end/images/image001-140845665.png', 'fixtures/end_to_end/images/image001.png')
