@@ -68,9 +68,7 @@ class GetMatchingKeysIntegrationTest(unittest.TestCase):
 
 class CleanupMainIntegrationTest(unittest.TestCase):
 
-    @moto.mock_s3
-    def test_end_to_end_cleanup_should_delete_files_with_matching_pattern(self):
-
+    def setUp(self):
         mycleanup.AWS_CONFIG_PATH = 'fixtures/end_to_end/boto2.cfg'
         mycleanup.AWS_PROFILE = 'dev'
         mycleanup.CSS_BUCKET = 'myrandombucket-0001'
@@ -80,6 +78,9 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         mycleanup.IMAGE_PREFIX = 'images/'
         mycleanup.JS_PREFIX = 'scripts/'
         mycleanup.XML_PATH = 'fixtures/end_to_end/config/fileVersion3.xml'
+
+    @moto.mock_s3
+    def test_end_to_end_cleanup_should_delete_files_with_matching_pattern(self):
 
         connection = boto.connect_s3('key', 'secret')
         bucket_css = connection.create_bucket(mycleanup.CSS_BUCKET)
@@ -95,6 +96,32 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         upload('fixtures/end_to_end/images/image001.png', 'images/image001-14665.png', 'image', bucket_image)
         self.assertTrue(exists('images/image001-14665.png', bucket_image))
 
+        out = io.StringIO()
+
+        with redirect_stdout(out):
+            mycleanup.cleanup_main()
+        output = out.getvalue()
+
+        expected_string_outputs = [
+            'Deleted http://myrandombucket-0001.s3.amazonaws.com/css/common-13241.css',
+            'Deleted http://myrandombucket-0002.s3.amazonaws.com/scripts/apply-14442.js',
+            'Deleted http://myrandombucket-0003.s3.amazonaws.com/images/image001-14665.png']
+
+        for line in expected_string_outputs:
+            self.assertIn(line, output)
+
+        self.assertFalse(exists('css/common-13241.css', bucket_css))
+        self.assertFalse(exists('scripts/apply-14442.js', bucket_js))
+        self.assertFalse(exists('images/image001-14665.png', bucket_image))
+
+    @moto.mock_s3
+    def test_end_to_end_cleanup_should_not_delete_files_not_matching_pattern(self):
+
+        connection = boto.connect_s3('key', 'secret')
+        bucket_css = connection.create_bucket(mycleanup.CSS_BUCKET)
+        bucket_js = connection.create_bucket(mycleanup.JS_BUCKET)
+        bucket_image = connection.create_bucket(mycleanup.IMAGE_BUCKET)
+
         upload('fixtures/end_to_end/css/common.css', 'css/nottobedeleted.css', 'css', bucket_css)
         self.assertTrue(exists('css/nottobedeleted.css', bucket_css))
 
@@ -103,6 +130,20 @@ class CleanupMainIntegrationTest(unittest.TestCase):
 
         upload('fixtures/end_to_end/images/image001.png', 'images/nottobedeleted.png', 'image', bucket_image)
         self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
+
+        mycleanup.cleanup_main()
+
+        self.assertTrue(exists('css/nottobedeleted.css', bucket_css))
+        self.assertTrue(exists('scripts/nottobedeleted.js', bucket_js))
+        self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
+
+    @moto.mock_s3
+    def test_end_to_end_cleanup_should_skip_files_indexed_in_xml(self):
+
+        connection = boto.connect_s3('key', 'secret')
+        bucket_css = connection.create_bucket(mycleanup.CSS_BUCKET)
+        bucket_js = connection.create_bucket(mycleanup.JS_BUCKET)
+        bucket_image = connection.create_bucket(mycleanup.IMAGE_BUCKET)
 
         upload('fixtures/end_to_end/css/to_persist_cleanup.css', 'css/to_persist_cleanup-9000.css', 'css', bucket_css)
         self.assertTrue(exists('css/to_persist_cleanup-9000.css', bucket_css))
@@ -114,21 +155,10 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         output = out.getvalue()
 
         expected_string_outputs = [
-            'Deleted http://myrandombucket-0001.s3.amazonaws.com/css/common-13241.css',
-            'Deleted http://myrandombucket-0002.s3.amazonaws.com/scripts/apply-14442.js',
-            'Deleted http://myrandombucket-0003.s3.amazonaws.com/images/image001-14665.png',
             'Skipping deletion of http://myrandombucket-0001.s3.amazonaws.com/css/to_persist_cleanup-9000.css, '
             'currently indexed in XML file']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
-
-        self.assertFalse(exists('css/common-13241.css', bucket_css))
-        self.assertFalse(exists('scripts/apply-14442.js', bucket_js))
-        self.assertFalse(exists('images/image001-14665.png', bucket_image))
-
-        self.assertTrue(exists('css/nottobedeleted.css', bucket_css))
-        self.assertTrue(exists('scripts/nottobedeleted.js', bucket_js))
-        self.assertTrue(exists('images/nottobedeleted.png', bucket_image))
 
         self.assertTrue(exists('css/to_persist_cleanup-9000.css', bucket_css))
