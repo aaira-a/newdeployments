@@ -244,6 +244,9 @@ class DeploymentMainTest(unittest.TestCase):
             'fixtures/end_to_end/js/apply.js.temp',
             'fixtures/end_to_end/js/apply.js.temp.gz',
             'fixtures/end_to_end/js/apply-1234567890.js',
+            'fixtures/end_to_end/js/notprocessed.js.temp',
+            'fixtures/end_to_end/js/notprocessed.js.temp.gz',
+            'fixtures/end_to_end/js/notprocessed-mispattern.js',
             ]
 
         for path in paths_to_cleanup:
@@ -284,18 +287,21 @@ class DeploymentMainTest(unittest.TestCase):
         output = self.execute()
 
         expected_string_outputs = [
-            'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
-            'gzipped fixtures/end_to_end/css/common.css.temp -> fixtures/end_to_end/css/common.css.temp.gz',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-0123456789.css',
-            'uploaded css/common-0123456789.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
+            'minified fixtures/end_to_end/css/common.css',
+            'gzipped fixtures/end_to_end/css/common.css.temp',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz',
+            'uploaded css/common-0123456789.css',
+            'http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
             '',
-            'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
-            'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1234567890.js',
-            'uploaded js/apply-1234567890.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js'
+            'minified fixtures/end_to_end/js/apply.js',
+            'gzipped fixtures/end_to_end/js/apply.js.temp',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz',
+            'uploaded js/apply-1234567890.js',
+            'http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js'
             '',
-            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-2345678901.png',
-            'uploaded images/image001-2345678901.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
+            'renamed fixtures/end_to_end/images/image001.png',
+            'uploaded images/image001-2345678901.png',
+            'http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
@@ -318,10 +324,11 @@ class DeploymentMainTest(unittest.TestCase):
         output = self.execute()
 
         expected_string_outputs = [
-            'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
-            'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1234567890.js',
-            'uploaded js/apply-1234567890.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js']
+            'minified fixtures/end_to_end/js/apply.js',
+            'gzipped fixtures/end_to_end/js/apply.js.temp',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz',
+            'uploaded js/apply-1234567890.js',
+            'http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
@@ -342,18 +349,21 @@ class DeploymentMainTest(unittest.TestCase):
         output = self.execute(skip_existing=False)
 
         expected_string_outputs = [
-            'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
-            'gzipped fixtures/end_to_end/css/common.css.temp -> fixtures/end_to_end/css/common.css.temp.gz',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-0123456789.css',
-            'uploaded css/common-0123456789.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
+            'minified fixtures/end_to_end/css/common.css',
+            'gzipped fixtures/end_to_end/css/common.css.temp',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz',
+            'uploaded css/common-0123456789.css',
+            'http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
             '',
-            'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
-            'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1234567890.js',
-            'uploaded js/apply-1234567890.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js',
+            'minified fixtures/end_to_end/js/apply.js',
+            'gzipped fixtures/end_to_end/js/apply.js.temp',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz',
+            'uploaded js/apply-1234567890.js',
+            'http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js',
             '',
-            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-2345678901.png',
-            'uploaded images/image001-2345678901.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
+            'renamed fixtures/end_to_end/images/image001.png',
+            'uploaded images/image001-2345678901.png',
+            'http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
@@ -377,3 +387,5 @@ class DeploymentMainTest(unittest.TestCase):
             self.assertIn(line, output)
 
         self.assertFalse(exists('js/notprocessed-mispattern.js', self.bucket_js))
+
+        self.assertFalse(os.path.exists('fixtures/end_to_end/js/notprocessed-mispattern.js'))
