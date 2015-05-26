@@ -3,6 +3,6 @@
 <staticFiles>
 	<file url="css/to_persist_cleanup.css">
 		<fileType>css</fileType>
-		<fileVersion>9000</fileVersion>
+		<fileVersion>0123456789</fileVersion>
 	</file>
 </staticFiles>

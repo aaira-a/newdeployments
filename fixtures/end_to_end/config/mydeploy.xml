@@ -3,14 +3,18 @@
 <staticFiles>
 	<file url="css/common.css">
 		<fileType>css</fileType>
-		<fileVersion>1423532041</fileVersion>
+		<fileVersion>0123456789</fileVersion>
 	</file>
 	<file url="js/apply.js">
 		<fileType>js</fileType>
-		<fileVersion>1408592767</fileVersion>
+		<fileVersion>1234567890</fileVersion>
+	</file>
+	<file url="js/notprocessed.js">
+		<fileType>js</fileType>
+		<fileVersion>mispattern</fileVersion>
 	</file>
 	<file url="images/image001.png">
 		<fileType>image</fileType>
-		<fileVersion>140845665</fileVersion>
+		<fileVersion>2345678901</fileVersion>
 	</file>
 </staticFiles>

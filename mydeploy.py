@@ -30,7 +30,11 @@ def deploy_main(skip_existing=True):
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
     for item in file_objects:
-        item.process()
+        if (len(item.version) == 10 and item.version.isdigit()):
+            item.process()
+        else:
+            print('Skipping processing of ' + item.versioned_path_in_filesystem +
+                  ', version does not equal 10 digits')
 
 
 def get_file_objects(aws_config_path, aws_profile,

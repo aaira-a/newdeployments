@@ -233,17 +233,17 @@ class DeploymentMainTest(unittest.TestCase):
         mydeploy.JS_BUCKET = 'myrandombucket-0002'
         mydeploy.MINIFIER_PATH = ''
         mydeploy.PREFIX_PATH = 'fixtures/end_to_end/'
-        mydeploy.XML_PATH = 'fixtures/end_to_end/config/fileVersion2.xml'
+        mydeploy.XML_PATH = 'fixtures/end_to_end/config/mydeploy.xml'
 
     def tearDown(self):
 
         paths_to_cleanup = [
             'fixtures/end_to_end/css/common.css.temp',
             'fixtures/end_to_end/css/common.css.temp.gz',
-            'fixtures/end_to_end/css/common-1423532041.css',
+            'fixtures/end_to_end/css/common-0123456789.css',
             'fixtures/end_to_end/js/apply.js.temp',
             'fixtures/end_to_end/js/apply.js.temp.gz',
-            'fixtures/end_to_end/js/apply-1408592767.js',
+            'fixtures/end_to_end/js/apply-1234567890.js',
             ]
 
         for path in paths_to_cleanup:
@@ -253,7 +253,7 @@ class DeploymentMainTest(unittest.TestCase):
                 pass
 
         try:
-            os.rename('fixtures/end_to_end/images/image001-140845665.png',
+            os.rename('fixtures/end_to_end/images/image001-2345678901.png',
                       'fixtures/end_to_end/images/image001.png')
         except:
             pass
@@ -286,78 +286,94 @@ class DeploymentMainTest(unittest.TestCase):
         expected_string_outputs = [
             'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
             'gzipped fixtures/end_to_end/css/common.css.temp -> fixtures/end_to_end/css/common.css.temp.gz',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-1423532041.css',
-            'uploaded css/common-1423532041.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-1423532041.css',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-0123456789.css',
+            'uploaded css/common-0123456789.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
             '',
             'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
             'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js'
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1234567890.js',
+            'uploaded js/apply-1234567890.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js'
             '',
-            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-140845665.png',
-            'uploaded images/image001-140845665.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-140845665.png']
+            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-2345678901.png',
+            'uploaded images/image001-2345678901.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
-        self.assertTrue(exists('js/apply-1408592767.js', self.bucket_js))
-        self.assertTrue(exists('images/image001-140845665.png', self.bucket_image))
+        self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
+        self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
+        self.assertTrue(exists('images/image001-2345678901.png', self.bucket_image))
 
     @moto.mock_s3
     def test_end_to_end_should_skip_existing_file_in_s3_in_default_mode(self):
 
         self.initialise_buckets()
 
-        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', self.bucket_css)
-        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-0123456789.css', 'css', self.bucket_css)
+        self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
 
-        upload('fixtures/end_to_end/images/image001.png', 'images/image001-140845665.png', 'image', self.bucket_image)
-        self.assertTrue(exists('images/image001-140845665.png', self.bucket_image))
+        upload('fixtures/end_to_end/images/image001.png', 'images/image001-2345678901.png', 'image', self.bucket_image)
+        self.assertTrue(exists('images/image001-2345678901.png', self.bucket_image))
 
         output = self.execute()
 
         expected_string_outputs = [
             'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
             'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js']
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1234567890.js',
+            'uploaded js/apply-1234567890.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(exists('js/apply-1408592767.js', self.bucket_js))
+        self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
 
-        self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-1423532041.css'))
-        self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-140845665.png'))
+        self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-0123456789.css'))
+        self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-2345678901.png'))
 
     @moto.mock_s3
     def test_end_to_end_should_force_process_all_files_if_explicitly_called(self):
 
         self.initialise_buckets()
 
-        upload('fixtures/end_to_end/css/common.css', 'css/common-1423532041.css', 'css', self.bucket_css)
-        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-0123456789.css', 'css', self.bucket_css)
+        self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
 
         output = self.execute(skip_existing=False)
 
         expected_string_outputs = [
             'minified fixtures/end_to_end/css/common.css -> fixtures/end_to_end/css/common.css.temp',
             'gzipped fixtures/end_to_end/css/common.css.temp -> fixtures/end_to_end/css/common.css.temp.gz',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-1423532041.css',
-            'uploaded css/common-1423532041.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-1423532041.css',
+            'renamed fixtures/end_to_end/css/common.css.temp.gz -> fixtures/end_to_end/css/common-0123456789.css',
+            'uploaded css/common-0123456789.css -> http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
             '',
             'minified fixtures/end_to_end/js/apply.js -> fixtures/end_to_end/js/apply.js.temp',
             'gzipped fixtures/end_to_end/js/apply.js.temp -> fixtures/end_to_end/js/apply.js.temp.gz',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1408592767.js',
-            'uploaded js/apply-1408592767.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1408592767.js',
+            'renamed fixtures/end_to_end/js/apply.js.temp.gz -> fixtures/end_to_end/js/apply-1234567890.js',
+            'uploaded js/apply-1234567890.js -> http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js',
             '',
-            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-140845665.png',
-            'uploaded images/image001-140845665.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-140845665.png']
+            'renamed fixtures/end_to_end/images/image001.png -> fixtures/end_to_end/images/image001-2345678901.png',
+            'uploaded images/image001-2345678901.png -> http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertTrue(exists('css/common-1423532041.css', self.bucket_css))
-        self.assertTrue(exists('js/apply-1408592767.js', self.bucket_js))
-        self.assertTrue(exists('images/image001-140845665.png', self.bucket_image))
+        self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
+        self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
+        self.assertTrue(exists('images/image001-2345678901.png', self.bucket_image))
+
+    @moto.mock_s3
+    def test_end_to_end_should_not_process_files_with_version_length_does_not_equal_ten_digits(self):
+
+        self.initialise_buckets()
+
+        output = self.execute()
+
+        expected_string_outputs = [
+            'Skipping processing of fixtures/end_to_end/js/notprocessed-mispattern.js, '
+            'version does not equal 10 digits']
+
+        for line in expected_string_outputs:
+            self.assertIn(line, output)
+
+        self.assertFalse(exists('js/notprocessed-mispattern.js', self.bucket_js))
