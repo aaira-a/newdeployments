@@ -2,9 +2,8 @@
 import re
 
 from mydeploy import (
-    connect_to_bucket,
-    get_aws_credentials,
     get_file_objects,
+    S3Util,
     )
 
 from environment_config import (
@@ -22,19 +21,18 @@ from environment_config import (
 
 def cleanup_main():
 
-    cred = get_aws_credentials(AWS_CONFIG_PATH, AWS_PROFILE)
+    c = S3Util.create_connection_pools(AWS_CONFIG_PATH, AWS_PROFILE,
+                                       CSS_BUCKET, JS_BUCKET, IMAGE_BUCKET)
 
-    css_bucket = connect_to_bucket(cred, CSS_BUCKET)
-    js_bucket = connect_to_bucket(cred, JS_BUCKET)
-    image_bucket = connect_to_bucket(cred, IMAGE_BUCKET)
-
-    existing_versioned_files_in_xml = get_file_objects(AWS_CONFIG_PATH, AWS_PROFILE,
-                                                       CSS_BUCKET, JS_BUCKET, IMAGE_BUCKET,
-                                                       XML_PATH)
+    existing_versioned_files_in_xml = get_file_objects(c, XML_PATH)
 
     keys_in_xml = [item.versioned_path_in_bucket for item in existing_versioned_files_in_xml]
 
-    for bucket in [[css_bucket, CSS_PREFIX], [js_bucket, JS_PREFIX], [image_bucket, IMAGE_PREFIX]]:
+    for bucket in [
+                   (c['css_bucket'], CSS_PREFIX),
+                   (c['js_bucket'], JS_PREFIX),
+                   (c['image_bucket'], IMAGE_PREFIX)]:
+
         keys_matching_pattern = get_all_matching_keys(bucket[0], bucket[1])
 
         for key_ in keys_matching_pattern:

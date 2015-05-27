@@ -2,15 +2,10 @@ import unittest
 from unittest import mock
 
 from mydeploy import (
-    compile_js,
-    compress_css,
-    gzip_file,
-    connect_to_bucket,
-    file_exists_in_s3_bucket as exists,
-    create_list_from_xml,
-    get_aws_credentials,
+    Minifier,
+    S3Util,
     StaticFile,
-    upload_gzipped_file_to_bucket as upload,
+    XMLParser,
     )
 
 import mydeploy
@@ -20,6 +15,9 @@ from contextlib import redirect_stdout
 import io
 import moto
 import os.path
+
+exists = S3Util.file_exists_in_s3_bucket
+upload = S3Util.upload_gzipped_file_to_bucket
 
 
 class XMLTest(unittest.TestCase):
@@ -31,7 +29,7 @@ class XMLTest(unittest.TestCase):
             ['validation.js', 'js', '1408592767'],
             ['path/to/default.js', 'js', '1408592767'], ]
         self.assertEqual(
-            create_list_from_xml('fixtures/fileVersion.xml'),
+            XMLParser.create_list_from_xml('fixtures/fileVersion.xml'),
             expected_list)
 
 
@@ -39,20 +37,20 @@ class YUICompressorTest(unittest.TestCase):
 
     @mock.patch('subprocess.call')
     def test_compress_css_should_call_yuicompressor_with_correct_syntax(self, mock_subprocess):
-        compress_css('input', 'output')
+        Minifier.compress_css('input', 'output')
         mock_subprocess.assert_called_with(
             ['java', '-jar', 'yuicompressor-2.4.8.jar', 'input', '-o', 'output'])
 
     @mock.patch('subprocess.call')
     def test_compress_css_should_return_zero_if_compression_is_successful(self, mock_subprocess):
         mock_subprocess.return_value = 0
-        return_code = compress_css('fixtures/styles.css', 'output')
+        return_code = Minifier.compress_css('fixtures/styles.css', 'output')
         self.assertEqual(return_code, 0)
 
     @mock.patch('subprocess.call')
     def test_compress_css_should_return_1_if_compression_is_unsuccessful(self, mock_subprocess):
         mock_subprocess.return_value = 1
-        return_code = compress_css('fixtures/notfound.css', 'output')
+        return_code = Minifier.compress_css('fixtures/notfound.css', 'output')
         self.assertEqual(return_code, 1)
 
 
@@ -60,20 +58,20 @@ class ClosureCompilerTest(unittest.TestCase):
 
     @mock.patch('subprocess.call')
     def test_compile_js_should_call_compiler_with_correct_syntax(self, mock_subprocess):
-        compile_js('input', 'output')
+        Minifier.compile_js('input', 'output')
         mock_subprocess.assert_called_with(
             ['java', '-jar', 'compiler.jar', '--js', 'input', '--js_output_file', 'output'])
 
     @mock.patch('subprocess.call')
     def test_compile_js_should_return_zero_if_compilation_is_successful(self, mock_subprocess):
         mock_subprocess.return_value = 0
-        return_code = compile_js('fixtures/cells.js', 'output')
+        return_code = Minifier.compile_js('fixtures/cells.js', 'output')
         self.assertEqual(return_code, 0)
 
     @mock.patch('subprocess.call')
     def test_compile_js_should_return_1_if_compilation_is_unsuccessful(self, mock_subprocess):
         mock_subprocess.return_value = 1
-        return_code = compile_js('fixtures/notfound.js', 'output')
+        return_code = Minifier.compile_js('fixtures/notfound.js', 'output')
         self.assertEqual(return_code, 1)
 
 
@@ -84,7 +82,7 @@ class GZipTest(unittest.TestCase):
         output_path = 'fixtures/styles.css.suffix'
 
         self.assertFalse(os.path.exists(output_path))
-        gzip_file(input_path, output_path)
+        Minifier.gzip_file(input_path, output_path)
         self.assertTrue(os.path.exists(output_path))
 
         input_size = os.path.getsize(input_path)
@@ -99,7 +97,8 @@ class GZipTest(unittest.TestCase):
 class VersionedPathTest(unittest.TestCase):
 
     def factory(self, path, type_, version):
-        return StaticFile('', path, type_, version, '', '', '')
+        connection_pools = {'css_bucket': '', 'js_bucket': '', 'image_bucket': ''}
+        return StaticFile('', path, type_, version, connection_pools)
 
     def test_get_versioned_path_from_css_file(self):
         static_css = self.factory('fixtures/styles.css', 'css', '9001')
@@ -147,7 +146,7 @@ class ConfigParserTest(unittest.TestCase):
 
     def test_config_parser_returns_credential_from_file(self):
         expected_cred = {'id': 'testing_access_key', 'secret': 'testing_secret_key'}
-        self.assertEqual(get_aws_credentials('fixtures/boto.cfg', 'testing'), expected_cred)
+        self.assertEqual(S3Util.get_aws_credentials('fixtures/boto.cfg', 'testing'), expected_cred)
 
 
 @moto.mock_s3
@@ -162,7 +161,7 @@ class ConnectToS3BucketTest(MotoBucketBaseTestClass):
 
     def test_connect_to_valid_s3_bucket_using_correct_credential_should_return_correct_bucket_object(self):
         profile = {'id': 'key', 'secret': 'secret'}
-        bucket_reconnect = connect_to_bucket(profile, 'mybucket567')
+        bucket_reconnect = S3Util.connect_to_bucket(profile, 'mybucket567')
         self.assertIsInstance(bucket_reconnect, boto.s3.bucket.Bucket)
         self.assertEqual(bucket_reconnect.name, 'mybucket567')
 

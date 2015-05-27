@@ -7,15 +7,16 @@ from mycleanup import (
 
 import mycleanup
 
-from mydeploy import (
-    file_exists_in_s3_bucket as exists,
-    upload_gzipped_file_to_bucket as upload,
-    )
+from mydeploy import S3Util
 
 import boto
 from contextlib import redirect_stdout
 import io
 import moto
+
+
+exists = S3Util.file_exists_in_s3_bucket
+upload = S3Util.upload_gzipped_file_to_bucket
 
 
 class VersionedPatternCheckerTest(unittest.TestCase):

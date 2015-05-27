@@ -22,9 +22,10 @@ from environment_config import (
 
 def deploy_main(skip_existing=True):
 
-    file_objects = get_file_objects(AWS_CONFIG_PATH, AWS_PROFILE,
-                                    CSS_BUCKET, JS_BUCKET, IMAGE_BUCKET,
-                                    XML_PATH)
+    connection_pools = S3Util.create_connection_pools(AWS_CONFIG_PATH, AWS_PROFILE,
+                                                      CSS_BUCKET, JS_BUCKET, IMAGE_BUCKET)
+
+    file_objects = get_file_objects(connection_pools, XML_PATH)
 
     if skip_existing:
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
@@ -37,23 +38,14 @@ def deploy_main(skip_existing=True):
                   ', version does not equal 10 digits')
 
 
-def get_file_objects(aws_config_path, aws_profile,
-                     css_bucket_name, js_bucket_name, image_bucket_name,
-                     xml_path):
-
-    cred = get_aws_credentials(aws_config_path, aws_profile)
-
-    css_bucket = connect_to_bucket(cred, css_bucket_name)
-    js_bucket = connect_to_bucket(cred, js_bucket_name)
-    image_bucket = connect_to_bucket(cred, image_bucket_name)
-
-    files = create_list_from_xml(xml_path)
-    file_objects = objectify_entries(files, css_bucket, js_bucket, image_bucket)
-
+def get_file_objects(connection_pools, xml_path):
+    files = XMLParser.create_list_from_xml(xml_path)
+    file_objects = objectify_entries(files, connection_pools)
     return file_objects
 
 
-def objectify_entries(entries_matrix, css_bucket, js_bucket, image_bucket):
+def objectify_entries(entries_matrix, connection_pools):
+
     items = []
 
     for entry in entries_matrix:
@@ -61,9 +53,7 @@ def objectify_entries(entries_matrix, css_bucket, js_bucket, image_bucket):
         file_type = entry[1]
         file_version = entry[2]
 
-        f = StaticFile(PREFIX_PATH, file_path,
-                       file_type, file_version,
-                       css_bucket, js_bucket, image_bucket)
+        f = StaticFile(PREFIX_PATH, file_path, file_type, file_version, connection_pools)
         items.append(f)
 
     return items
@@ -71,7 +61,7 @@ def objectify_entries(entries_matrix, css_bucket, js_bucket, image_bucket):
 
 class StaticFile(object):
 
-    def __init__(self, prefix_path, file_path, type_, version, css_bucket, js_bucket, image_bucket):
+    def __init__(self, prefix_path, file_path, type_, version, connection_pools):
         self.file_path = file_path
         self.type_ = type_
         self.version = version
@@ -80,13 +70,13 @@ class StaticFile(object):
         self.versioned_path_in_filesystem = self.get_versioned_file_path(with_prefix=True)
 
         if type_ == 'css':
-            self.associated_bucket = css_bucket
+            self.associated_bucket = connection_pools['css_bucket']
 
         elif type_ == 'js':
-            self.associated_bucket = js_bucket
+            self.associated_bucket = connection_pools['js_bucket']
 
         elif type_ == 'image':
-            self.associated_bucket = image_bucket
+            self.associated_bucket = connection_pools['image_bucket']
             self.gzipped_path = self.path_in_filesystem
 
     def process(self):
@@ -104,10 +94,10 @@ class StaticFile(object):
         self.minified_path = input_ + '.temp'
 
         if self.type_ == 'css':
-            compress_css(input_, self.minified_path)
+            Minifier.compress_css(input_, self.minified_path)
 
         elif self.type_ == 'js':
-            compile_js(input_, self.minified_path)
+            Minifier.compile_js(input_, self.minified_path)
 
         print('minified ' + self.path_in_filesystem + ' -> ' + self.minified_path)
 
@@ -115,7 +105,7 @@ class StaticFile(object):
         input_ = self.minified_path
         self.gzipped_path = input_ + '.gz'
 
-        gzip_file(input_, self.gzipped_path)
+        Minifier.gzip_file(input_, self.gzipped_path)
         print('gzipped ' + self.minified_path + ' -> ' + self.gzipped_path)
 
     def get_versioned_file_path(self, with_prefix=True):
@@ -132,92 +122,106 @@ class StaticFile(object):
         print('renamed ' + self.gzipped_path + ' -> ' + self.versioned_path_in_filesystem)
 
     def upload(self):
-        upload_gzipped_file_to_bucket(self.versioned_path_in_filesystem,
-                                      self.versioned_path_in_bucket,
-                                      self.type_,
-                                      self.associated_bucket)
+        S3Util.upload_gzipped_file_to_bucket(self.versioned_path_in_filesystem,
+                                             self.versioned_path_in_bucket,
+                                             self.type_,
+                                             self.associated_bucket)
 
         print('uploaded ' + self.versioned_path_in_bucket + ' -> ' +
               'http://' + self.associated_bucket.name + '.s3.amazonaws.com/' + self.versioned_path_in_bucket)
 
     def exists_in_bucket(self):
-        return file_exists_in_s3_bucket(self.versioned_path_in_bucket,
-                                        self.associated_bucket)
+        return S3Util.file_exists_in_s3_bucket(self.versioned_path_in_bucket,
+                                               self.associated_bucket)
 
 
-def create_list_from_xml(path):
-    tree = ET.parse(path)
-    root = tree.getroot()
-    packed = []
+class S3Util(object):
 
-    for file_element in root:
-        file_name = file_element.attrib['url']
-        file_type = file_element[0].text
-        file_version = file_element[1].text
+    def create_connection_pools(config_path, profile,
+                                css_bucket_name, js_bucket_name, image_bucket_name):
 
-        sublist = [file_name, file_type, file_version]
-        packed.append(sublist)
+        cred = S3Util.get_aws_credentials(config_path, profile)
 
-    return packed
+        css_bucket = S3Util.connect_to_bucket(cred, css_bucket_name)
+        js_bucket = S3Util.connect_to_bucket(cred, js_bucket_name)
+        image_bucket = S3Util.connect_to_bucket(cred, image_bucket_name)
 
+        return {'css_bucket': css_bucket,
+                'js_bucket': js_bucket,
+                'image_bucket': image_bucket}
 
-def compress_css(input_, output):
-    return subprocess.call([JAVA_PATH + 'java', '-jar',
-                            MINIFIER_PATH + 'yuicompressor-2.4.8.jar',
-                            input_,
-                            '-o', output])
+    def get_aws_credentials(path, profile):
+        config = configparser.ConfigParser()
+        config.read(path)
+        p = config[profile]
+        return {'id': p['aws_access_key_id'],
+                'secret': p['aws_secret_access_key']}
 
+    def connect_to_bucket(profile, bucket):
+        connection = boto.connect_s3(profile['id'], profile['secret'])
+        return connection.get_bucket(bucket)
 
-def compile_js(input_, output):
-    return subprocess.call([JAVA_PATH + 'java', '-jar',
-                            MINIFIER_PATH + 'compiler.jar',
-                            '--js', input_,
-                            '--js_output_file', output])
+    def file_exists_in_s3_bucket(path, bucket):
+        k = boto.s3.key.Key(bucket)
+        k.key = path
+        return k.exists()
 
+    def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, bucket):
+        k = boto.s3.key.Key(bucket)
+        k.key = uploaded_as_path
 
-def gzip_file(input_, output):
-    with open(input_, 'rb') as input_file:
-        with gzip.open(output, 'wb') as output_file:
-            output_file.writelines(input_file)
+        if file_type == 'css':
+            headers = {'Content-Encoding': 'gzip',
+                       'Content-Type': 'text/css',
+                       'Cache-Control': 'max-age=31536000'}
 
+        elif file_type == 'js':
+            headers = {'Content-Encoding': 'gzip',
+                       'Content-Type': 'application/javascript',
+                       'Cache-Control': 'max-age=31536000'}
 
-def get_aws_credentials(path, profile):
-    config = configparser.ConfigParser()
-    config.read(path)
-    p = config[profile]
-    return {'id': p['aws_access_key_id'],
-            'secret': p['aws_secret_access_key']}
+        elif file_type == 'image':
+            headers = {'Cache-Control': str.encode('max-age=31536000, no transform, public')}
 
-
-def connect_to_bucket(profile, bucket):
-    connection = boto.connect_s3(profile['id'], profile['secret'])
-    return connection.get_bucket(bucket)
-
-
-def file_exists_in_s3_bucket(path, bucket):
-    k = boto.s3.key.Key(bucket)
-    k.key = path
-    return k.exists()
+        k.set_contents_from_filename(source_path, headers=headers, policy='public-read')
 
 
-def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, bucket):
-    k = boto.s3.key.Key(bucket)
-    k.key = uploaded_as_path
+class XMLParser(object):
 
-    if file_type == 'css':
-        headers = {'Content-Encoding': 'gzip',
-                   'Content-Type': 'text/css',
-                   'Cache-Control': 'max-age=31536000'}
+    def create_list_from_xml(path):
+        tree = ET.parse(path)
+        root = tree.getroot()
+        packed = []
 
-    elif file_type == 'js':
-        headers = {'Content-Encoding': 'gzip',
-                   'Content-Type': 'application/javascript',
-                   'Cache-Control': 'max-age=31536000'}
+        for file_element in root:
+            file_name = file_element.attrib['url']
+            file_type = file_element[0].text
+            file_version = file_element[1].text
 
-    elif file_type == 'image':
-        headers = {'Cache-Control': str.encode('max-age=31536000, no transform, public')}
+            sublist = [file_name, file_type, file_version]
+            packed.append(sublist)
 
-    k.set_contents_from_filename(source_path, headers=headers, policy='public-read')
+        return packed
+
+
+class Minifier(object):
+
+    def compress_css(input_, output):
+        return subprocess.call([JAVA_PATH + 'java', '-jar',
+                                MINIFIER_PATH + 'yuicompressor-2.4.8.jar',
+                                input_,
+                                '-o', output])
+
+    def compile_js(input_, output):
+        return subprocess.call([JAVA_PATH + 'java', '-jar',
+                                MINIFIER_PATH + 'compiler.jar',
+                                '--js', input_,
+                                '--js_output_file', output])
+
+    def gzip_file(input_, output):
+        with open(input_, 'rb') as input_file:
+            with gzip.open(output, 'wb') as output_file:
+                output_file.writelines(input_file)
 
 
 if __name__ == '__main__':
