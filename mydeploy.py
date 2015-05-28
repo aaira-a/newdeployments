@@ -39,7 +39,7 @@ def deploy_main(skip_existing=True):
 
 
 def get_file_objects(connection_pools, xml_path):
-    files = XMLParser.create_list_from_xml(xml_path)
+    files = XMLParser.create_matrix_from_xml(xml_path)
     file_objects = objectify_entries(files, connection_pools)
     return file_objects
 
@@ -188,7 +188,7 @@ class S3Util(object):
 
 class XMLParser(object):
 
-    def create_list_from_xml(path):
+    def create_matrix_from_xml(path):
         tree = ET.parse(path)
         root = tree.getroot()
         packed = []

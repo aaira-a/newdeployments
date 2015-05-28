@@ -29,7 +29,7 @@ class XMLTest(unittest.TestCase):
             ['validation.js', 'js', '1408592767'],
             ['path/to/default.js', 'js', '1408592767'], ]
         self.assertEqual(
-            XMLParser.create_list_from_xml('fixtures/fileVersion.xml'),
+            XMLParser.create_matrix_from_xml('fixtures/fileVersion.xml'),
             expected_list)
 
 
@@ -221,6 +221,57 @@ class UploadFileToS3Test(MotoBucketBaseTestClass):
         self.assertEqual(policy.acl.grants[1].permission, 'READ')
 
 
+class StaticFileWrapperMethodsTest(unittest.TestCase):
+
+    def factory(self, path='mypath', type_='css'):
+        connections = {'css_bucket': '', 'js_bucket': '', 'image_bucket': ''}
+        return StaticFile('', path, type_, '1234567890', connections)
+
+    def execute(self, the_object, function):
+        out = io.StringIO()
+
+        with redirect_stdout(out):
+            getattr(the_object, function)()
+        return out.getvalue()
+
+    @mock.patch('mydeploy.Minifier')
+    def test_minify_css_should_print_information(self, mock_Minifier):
+        css_file = self.factory('css1.css', 'css')
+        output = self.execute(css_file, 'minify')
+        self.assertIn('minified css1.css -> css1.css.temp', output)
+
+    @mock.patch('mydeploy.Minifier')
+    def test_minify_js_should_print_information(self, mock_Minifier):
+        js_file = self.factory('js1.js', 'js')
+        output = self.execute(js_file, 'minify')
+        self.assertIn('minified js1.js -> js1.js.temp', output)
+
+    @mock.patch('mydeploy.Minifier')
+    def test_gzip_should_print_information(self, mock_Minifier):
+        css_file = self.factory('css1.css', 'css')
+        css_file.minified_path = 'css1.css.temp'
+
+        output = self.execute(css_file, 'gzip')
+        self.assertIn('gzipped css1.css.temp -> css1.css.temp.gz', output)
+
+    @mock.patch('os.rename')
+    def test_rename_should_print_information(self, mock_os):
+        js_file = self.factory('js1.js', 'js')
+        js_file.gzipped_path = 'js1.js.temp.gz'
+
+        output = self.execute(js_file, 'rename')
+        self.assertIn('renamed js1.js.temp.gz -> js1-1234567890.js', output)
+
+    @mock.patch('mydeploy.S3Util')
+    def test_upload_should_print_information(self, mock_S3Util):
+        css_file = self.factory('css1.css', 'css')
+        css_file.associated_bucket = boto.s3.bucket.Bucket(name='css_bucket')
+
+        output = self.execute(css_file, 'upload')
+        self.assertIn('uploaded css1-1234567890.css -> '
+                      'http://css_bucket.s3.amazonaws.com/css1-1234567890.css', output)
+
+
 class DeploymentMainTest(unittest.TestCase):
 
     def setUp(self):
@@ -283,27 +334,7 @@ class DeploymentMainTest(unittest.TestCase):
 
         self.initialise_buckets()
 
-        output = self.execute()
-
-        expected_string_outputs = [
-            'minified fixtures/end_to_end/css/common.css',
-            'gzipped fixtures/end_to_end/css/common.css.temp',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz',
-            'uploaded css/common-0123456789.css',
-            'http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
-            '',
-            'minified fixtures/end_to_end/js/apply.js',
-            'gzipped fixtures/end_to_end/js/apply.js.temp',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz',
-            'uploaded js/apply-1234567890.js',
-            'http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js'
-            '',
-            'renamed fixtures/end_to_end/images/image001.png',
-            'uploaded images/image001-2345678901.png',
-            'http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
-
-        for line in expected_string_outputs:
-            self.assertIn(line, output)
+        self.execute()
 
         self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
         self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
@@ -320,17 +351,7 @@ class DeploymentMainTest(unittest.TestCase):
         upload('fixtures/end_to_end/images/image001.png', 'images/image001-2345678901.png', 'image', self.bucket_image)
         self.assertTrue(exists('images/image001-2345678901.png', self.bucket_image))
 
-        output = self.execute()
-
-        expected_string_outputs = [
-            'minified fixtures/end_to_end/js/apply.js',
-            'gzipped fixtures/end_to_end/js/apply.js.temp',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz',
-            'uploaded js/apply-1234567890.js',
-            'http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js']
-
-        for line in expected_string_outputs:
-            self.assertIn(line, output)
+        self.execute()
 
         self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
 
@@ -347,25 +368,7 @@ class DeploymentMainTest(unittest.TestCase):
 
         output = self.execute(skip_existing=False)
 
-        expected_string_outputs = [
-            'minified fixtures/end_to_end/css/common.css',
-            'gzipped fixtures/end_to_end/css/common.css.temp',
-            'renamed fixtures/end_to_end/css/common.css.temp.gz',
-            'uploaded css/common-0123456789.css',
-            'http://myrandombucket-0001.s3.amazonaws.com/css/common-0123456789.css',
-            '',
-            'minified fixtures/end_to_end/js/apply.js',
-            'gzipped fixtures/end_to_end/js/apply.js.temp',
-            'renamed fixtures/end_to_end/js/apply.js.temp.gz',
-            'uploaded js/apply-1234567890.js',
-            'http://myrandombucket-0002.s3.amazonaws.com/js/apply-1234567890.js',
-            '',
-            'renamed fixtures/end_to_end/images/image001.png',
-            'uploaded images/image001-2345678901.png',
-            'http://myrandombucket-0003.s3.amazonaws.com/images/image001-2345678901.png']
-
-        for line in expected_string_outputs:
-            self.assertIn(line, output)
+        self.assertIn('uploaded css/common-0123456789.css', output)
 
         self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
         self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
