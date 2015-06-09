@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <staticFiles>
-	<file url="css/common.css">
+	<file url="common.css">
 		<fileType>css</fileType>
 		<fileVersion>0123456789</fileVersion>
 	</file>
-	<file url="js/apply.js">
+	<file url="apply.js">
 		<fileType>js</fileType>
 		<fileVersion>1234567890</fileVersion>
 	</file>
-	<file url="js/notprocessed.js">
+	<file url="notprocessed.js">
 		<fileType>js</fileType>
 		<fileVersion>mispattern</fileVersion>
 	</file>
-	<file url="images/image001.png">
+	<file url="image001.png">
 		<fileType>image</fileType>
 		<fileVersion>2345678901</fileVersion>
 	</file>

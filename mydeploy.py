@@ -62,10 +62,19 @@ def objectify_entries(entries_matrix, connection_pools):
 class StaticFile(object):
 
     def __init__(self, prefix_path, file_path, type_, version, connection_pools):
-        self.file_path = file_path
+
+        if type_ == 'css':
+            self.file_path = 'css/' + file_path
+
+        elif type_ == 'js':
+            self.file_path = 'scripts/' + file_path
+
+        elif type_ == 'image':
+            self.file_path = 'images/' + file_path
+
         self.type_ = type_
         self.version = version
-        self.path_in_filesystem = prefix_path + file_path
+        self.path_in_filesystem = prefix_path + self.file_path
         self.versioned_path_in_bucket = self.get_versioned_file_path(with_prefix=False)
         self.versioned_path_in_filesystem = self.get_versioned_file_path(with_prefix=True)
 

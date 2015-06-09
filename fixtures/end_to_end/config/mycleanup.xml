@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <staticFiles>
-	<file url="css/to_persist_cleanup.css">
+	<file url="to_persist_cleanup.css">
 		<fileType>css</fileType>
 		<fileVersion>0123456789</fileVersion>
 	</file>

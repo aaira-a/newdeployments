@@ -115,7 +115,7 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         upload('fixtures/end_to_end/css/common.css', 'css/common-0123456789.css', 'css', self.bucket_css)
         self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
 
-        upload('fixtures/end_to_end/js/apply.js', 'scripts/apply-1234567890.js', 'js', self.bucket_js)
+        upload('fixtures/end_to_end/scripts/apply.js', 'scripts/apply-1234567890.js', 'js', self.bucket_js)
         self.assertTrue(exists('scripts/apply-1234567890.js', self.bucket_js))
 
         upload('fixtures/end_to_end/images/image001.png', 'images/image001-2345678901.png', 'image', self.bucket_image)
@@ -143,7 +143,7 @@ class CleanupMainIntegrationTest(unittest.TestCase):
         upload('fixtures/end_to_end/css/common.css', 'css/nottobedeleted.css', 'css', self.bucket_css)
         self.assertTrue(exists('css/nottobedeleted.css', self.bucket_css))
 
-        upload('fixtures/end_to_end/js/apply.js', 'scripts/nottobedeleted.js', 'js', self.bucket_js)
+        upload('fixtures/end_to_end/scripts/apply.js', 'scripts/nottobedeleted.js', 'js', self.bucket_js)
         self.assertTrue(exists('scripts/nottobedeleted.js', self.bucket_js))
 
         upload('fixtures/end_to_end/images/image001.png', 'images/nottobedeleted.png', 'image', self.bucket_image)

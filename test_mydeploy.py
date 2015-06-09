@@ -102,27 +102,27 @@ class VersionedPathTest(unittest.TestCase):
 
     def test_get_versioned_path_from_css_file(self):
         static_css = self.factory('fixtures/styles.css', 'css', '9001')
-        self.assertEqual(static_css.get_versioned_file_path(), 'fixtures/styles-9001.css')
+        self.assertEqual(static_css.get_versioned_file_path(), 'css/fixtures/styles-9001.css')
 
     def test_get_versioned_path_from_js_file(self):
         static_js = self.factory('fixtures/cells.js', 'js', '9002')
-        self.assertEqual(static_js.get_versioned_file_path(), 'fixtures/cells-9002.js')
+        self.assertEqual(static_js.get_versioned_file_path(), 'scripts/fixtures/cells-9002.js')
 
     def test_get_versioned_path_from_gif_image_file(self):
         static_image = self.factory('fixtures/image001.gif', 'image', '9003')
-        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image001-9003.gif')
+        self.assertEqual(static_image.get_versioned_file_path(), 'images/fixtures/image001-9003.gif')
 
     def test_get_versioned_path_from_jpg_image_file(self):
         static_image = self.factory('fixtures/image002.jpg', 'image', '9004')
-        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image002-9004.jpg')
+        self.assertEqual(static_image.get_versioned_file_path(), 'images/fixtures/image002-9004.jpg')
 
     def test_get_versioned_path_from_jpeg_image_file(self):
         static_image = self.factory('fixtures/image003.jpeg', 'image', '9005')
-        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image003-9005.jpeg')
+        self.assertEqual(static_image.get_versioned_file_path(), 'images/fixtures/image003-9005.jpeg')
 
     def test_get_versioned_path_from_png_image_file(self):
         static_image = self.factory('fixtures/image004.png', 'image', '9006')
-        self.assertEqual(static_image.get_versioned_file_path(), 'fixtures/image004-9006.png')
+        self.assertEqual(static_image.get_versioned_file_path(), 'images/fixtures/image004-9006.png')
 
 
 class FileRenameTest(unittest.TestCase):
@@ -238,13 +238,13 @@ class StaticFileWrapperMethodsTest(unittest.TestCase):
     def test_minify_css_should_print_information(self, mock_Minifier):
         css_file = self.factory('css1.css', 'css')
         output = self.execute(css_file, 'minify')
-        self.assertIn('minified css1.css -> css1.css.temp', output)
+        self.assertIn('minified css/css1.css -> css/css1.css.temp', output)
 
     @mock.patch('mydeploy.Minifier')
     def test_minify_js_should_print_information(self, mock_Minifier):
         js_file = self.factory('js1.js', 'js')
         output = self.execute(js_file, 'minify')
-        self.assertIn('minified js1.js -> js1.js.temp', output)
+        self.assertIn('minified scripts/js1.js -> scripts/js1.js.temp', output)
 
     @mock.patch('mydeploy.Minifier')
     def test_gzip_should_print_information(self, mock_Minifier):
@@ -257,10 +257,10 @@ class StaticFileWrapperMethodsTest(unittest.TestCase):
     @mock.patch('os.rename')
     def test_rename_should_print_information(self, mock_os):
         js_file = self.factory('js1.js', 'js')
-        js_file.gzipped_path = 'js1.js.temp.gz'
+        js_file.gzipped_path = 'scripts/js1.js.temp.gz'
 
         output = self.execute(js_file, 'rename')
-        self.assertIn('renamed js1.js.temp.gz -> js1-1234567890.js', output)
+        self.assertIn('renamed scripts/js1.js.temp.gz -> scripts/js1-1234567890.js', output)
 
     @mock.patch('mydeploy.S3Util')
     def test_upload_should_print_information(self, mock_S3Util):
@@ -268,8 +268,8 @@ class StaticFileWrapperMethodsTest(unittest.TestCase):
         css_file.associated_bucket = boto.s3.bucket.Bucket(name='css_bucket')
 
         output = self.execute(css_file, 'upload')
-        self.assertIn('uploaded css1-1234567890.css -> '
-                      'http://css_bucket.s3.amazonaws.com/css1-1234567890.css', output)
+        self.assertIn('uploaded css/css1-1234567890.css -> '
+                      'http://css_bucket.s3.amazonaws.com/css/css1-1234567890.css', output)
 
 
 class DeploymentMainTest(unittest.TestCase):
@@ -291,12 +291,12 @@ class DeploymentMainTest(unittest.TestCase):
             'fixtures/end_to_end/css/common.css.temp',
             'fixtures/end_to_end/css/common.css.temp.gz',
             'fixtures/end_to_end/css/common-0123456789.css',
-            'fixtures/end_to_end/js/apply.js.temp',
-            'fixtures/end_to_end/js/apply.js.temp.gz',
-            'fixtures/end_to_end/js/apply-1234567890.js',
-            'fixtures/end_to_end/js/notprocessed.js.temp',
-            'fixtures/end_to_end/js/notprocessed.js.temp.gz',
-            'fixtures/end_to_end/js/notprocessed-mispattern.js',
+            'fixtures/end_to_end/scripts/apply.js.temp',
+            'fixtures/end_to_end/scripts/apply.js.temp.gz',
+            'fixtures/end_to_end/scripts/apply-1234567890.js',
+            'fixtures/end_to_end/scripts/notprocessed.js.temp',
+            'fixtures/end_to_end/scripts/notprocessed.js.temp.gz',
+            'fixtures/end_to_end/scripts/notprocessed-mispattern.js',
             ]
 
         for path in paths_to_cleanup:
@@ -337,7 +337,7 @@ class DeploymentMainTest(unittest.TestCase):
         self.execute()
 
         self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
-        self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
+        self.assertTrue(exists('scripts/apply-1234567890.js', self.bucket_js))
         self.assertTrue(exists('images/image001-2345678901.png', self.bucket_image))
 
     @moto.mock_s3
@@ -353,7 +353,7 @@ class DeploymentMainTest(unittest.TestCase):
 
         self.execute()
 
-        self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
+        self.assertTrue(exists('scripts/apply-1234567890.js', self.bucket_js))
 
         self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-0123456789.css'))
         self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-2345678901.png'))
@@ -371,7 +371,7 @@ class DeploymentMainTest(unittest.TestCase):
         self.assertIn('uploaded css/common-0123456789.css', output)
 
         self.assertTrue(exists('css/common-0123456789.css', self.bucket_css))
-        self.assertTrue(exists('js/apply-1234567890.js', self.bucket_js))
+        self.assertTrue(exists('scripts/apply-1234567890.js', self.bucket_js))
         self.assertTrue(exists('images/image001-2345678901.png', self.bucket_image))
 
     @moto.mock_s3
@@ -382,12 +382,12 @@ class DeploymentMainTest(unittest.TestCase):
         output = self.execute()
 
         expected_string_outputs = [
-            'Skipping processing of fixtures/end_to_end/js/notprocessed-mispattern.js, '
+            'Skipping processing of fixtures/end_to_end/scripts/notprocessed-mispattern.js, '
             'version does not equal 10 digits']
 
         for line in expected_string_outputs:
             self.assertIn(line, output)
 
-        self.assertFalse(exists('js/notprocessed-mispattern.js', self.bucket_js))
+        self.assertFalse(exists('scripts/notprocessed-mispattern.js', self.bucket_js))
 
-        self.assertFalse(os.path.exists('fixtures/end_to_end/js/notprocessed-mispattern.js'))
+        self.assertFalse(os.path.exists('fixtures/end_to_end/scripts/notprocessed-mispattern.js'))
