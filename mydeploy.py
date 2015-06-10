@@ -31,11 +31,11 @@ def deploy_main(skip_existing=True):
         file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
 
     for item in file_objects:
-        if (len(item.version) == 10 and item.version.isdigit()):
+        if (len(item.version) == 12 and item.version.isdigit()):
             item.process()
         else:
             print('Skipping processing of ' + item.versioned_path_in_filesystem +
-                  ', version does not equal 10 digits')
+                  ', version does not equal 12 digits')
 
 
 def get_file_objects(connection_pools, xml_path):

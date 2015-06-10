@@ -3,11 +3,11 @@
 <staticFiles>
 	<file url="common.css">
 		<fileType>css</fileType>
-		<fileVersion>0123456789</fileVersion>
+		<fileVersion>012345678901</fileVersion>
 	</file>
 	<file url="apply.js">
 		<fileType>js</fileType>
-		<fileVersion>1234567890</fileVersion>
+		<fileVersion>123456789012</fileVersion>
 	</file>
 	<file url="notprocessed.js">
 		<fileType>js</fileType>
@@ -15,6 +15,6 @@
 	</file>
 	<file url="image001.png">
 		<fileType>image</fileType>
-		<fileVersion>2345678901</fileVersion>
+		<fileVersion>234567890123</fileVersion>
 	</file>
 </staticFiles>

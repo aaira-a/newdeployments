@@ -51,7 +51,7 @@ def get_all_matching_keys(bucket, prefix_=None):
 
 
 def is_matching_versioned_pattern(path):
-    return bool(re.search('\/(.*-\d{10}\..*$)', path))
+    return bool(re.search('\/(.*-\d{12}\..*$)', path))
 
 
 if __name__ == '__main__':
