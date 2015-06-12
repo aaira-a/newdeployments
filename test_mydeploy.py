@@ -19,6 +19,8 @@ import os.path
 exists = S3Util.file_exists_in_s3_bucket
 upload = S3Util.upload_gzipped_file_to_bucket
 
+VALID_VERSION = '000000000012'
+
 
 class XMLTest(unittest.TestCase):
 
@@ -290,10 +292,10 @@ class DeploymentMainTest(unittest.TestCase):
         paths_to_cleanup = [
             'fixtures/end_to_end/css/common.css.temp',
             'fixtures/end_to_end/css/common.css.temp.gz',
-            'fixtures/end_to_end/css/common-012345678901.css',
+            'fixtures/end_to_end/css/common-' + VALID_VERSION + '.css',
             'fixtures/end_to_end/scripts/apply.js.temp',
             'fixtures/end_to_end/scripts/apply.js.temp.gz',
-            'fixtures/end_to_end/scripts/apply-123456789012.js',
+            'fixtures/end_to_end/scripts/apply-' + VALID_VERSION + '.js',
             'fixtures/end_to_end/scripts/notprocessed.js.temp',
             'fixtures/end_to_end/scripts/notprocessed.js.temp.gz',
             'fixtures/end_to_end/scripts/notprocessed-mispattern.js',
@@ -306,7 +308,7 @@ class DeploymentMainTest(unittest.TestCase):
                 pass
 
         try:
-            os.rename('fixtures/end_to_end/images/image001-234567890123.png',
+            os.rename('fixtures/end_to_end/images/image001-' + VALID_VERSION + '.png',
                       'fixtures/end_to_end/images/image001.png')
         except:
             pass
@@ -336,43 +338,43 @@ class DeploymentMainTest(unittest.TestCase):
 
         self.execute()
 
-        self.assertTrue(exists('css/common-012345678901.css', self.bucket_css))
-        self.assertTrue(exists('scripts/apply-123456789012.js', self.bucket_js))
-        self.assertTrue(exists('images/image001-234567890123.png', self.bucket_image))
+        self.assertTrue(exists('css/common-' + VALID_VERSION + '.css', self.bucket_css))
+        self.assertTrue(exists('scripts/apply-' + VALID_VERSION + '.js', self.bucket_js))
+        self.assertTrue(exists('images/image001-' + VALID_VERSION + '.png', self.bucket_image))
 
     @moto.mock_s3
     def test_end_to_end_should_skip_existing_file_in_s3_in_default_mode(self):
 
         self.initialise_buckets()
 
-        upload('fixtures/end_to_end/css/common.css', 'css/common-012345678901.css', 'css', self.bucket_css)
-        self.assertTrue(exists('css/common-012345678901.css', self.bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-' + VALID_VERSION + '.css', 'css', self.bucket_css)
+        self.assertTrue(exists('css/common-' + VALID_VERSION + '.css', self.bucket_css))
 
-        upload('fixtures/end_to_end/images/image001.png', 'images/image001-234567890123.png', 'image', self.bucket_image)
-        self.assertTrue(exists('images/image001-234567890123.png', self.bucket_image))
+        upload('fixtures/end_to_end/images/image001.png', 'images/image001-' + VALID_VERSION + '.png', 'image', self.bucket_image)
+        self.assertTrue(exists('images/image001-' + VALID_VERSION + '.png', self.bucket_image))
 
         self.execute()
 
-        self.assertTrue(exists('scripts/apply-123456789012.js', self.bucket_js))
+        self.assertTrue(exists('scripts/apply-' + VALID_VERSION + '.js', self.bucket_js))
 
-        self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-012345678901.css'))
-        self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-234567890123.png'))
+        self.assertFalse(os.path.exists('fixtures/end_to_end/css/common-' + VALID_VERSION + '.css'))
+        self.assertFalse(os.path.exists('fixtures/end_to_end/images/image001-' + VALID_VERSION + '.png'))
 
     @moto.mock_s3
     def test_end_to_end_should_force_process_all_files_if_explicitly_called(self):
 
         self.initialise_buckets()
 
-        upload('fixtures/end_to_end/css/common.css', 'css/common-012345678901.css', 'css', self.bucket_css)
-        self.assertTrue(exists('css/common-012345678901.css', self.bucket_css))
+        upload('fixtures/end_to_end/css/common.css', 'css/common-' + VALID_VERSION + '.css', 'css', self.bucket_css)
+        self.assertTrue(exists('css/common-' + VALID_VERSION + '.css', self.bucket_css))
 
         output = self.execute(skip_existing=False)
 
-        self.assertIn('uploaded css/common-012345678901.css', output)
+        self.assertIn('uploaded css/common-' + VALID_VERSION + '.css', output)
 
-        self.assertTrue(exists('css/common-012345678901.css', self.bucket_css))
-        self.assertTrue(exists('scripts/apply-123456789012.js', self.bucket_js))
-        self.assertTrue(exists('images/image001-234567890123.png', self.bucket_image))
+        self.assertTrue(exists('css/common-' + VALID_VERSION + '.css', self.bucket_css))
+        self.assertTrue(exists('scripts/apply-' + VALID_VERSION + '.js', self.bucket_js))
+        self.assertTrue(exists('images/image001-' + VALID_VERSION + '.png', self.bucket_image))
 
     @moto.mock_s3
     def test_end_to_end_should_not_process_files_with_version_length_does_not_equal_twelve_digits(self):
