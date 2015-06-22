@@ -26,7 +26,8 @@ def cleanup_main():
 
     existing_versioned_files_in_xml = get_file_objects(c, XML_PATH)
 
-    keys_in_xml = [item.versioned_path_in_bucket for item in existing_versioned_files_in_xml]
+    keys_in_xml = [item.versioned_path_in_bucket for item
+                   in existing_versioned_files_in_xml]
 
     for bucket in [
                    (c['css_bucket'], CSS_PREFIX),
@@ -38,16 +39,19 @@ def cleanup_main():
         for key_ in keys_matching_pattern:
 
             if (key_.key in keys_in_xml):
-                print('Skipping deletion of http://' + bucket[0].name + '.s3.amazonaws.com/' + key_.key +
+                print('Skipping deletion of http://' + bucket[0].name +
+                      '.s3.amazonaws.com/' + key_.key +
                       ', currently indexed in XML file \n')
 
             else:
                 key_.delete()
-                print('Deleted http://' + bucket[0].name + '.s3.amazonaws.com/' + key_.key + '\n')
+                print('Deleted http://' + bucket[0].name +
+                      '.s3.amazonaws.com/' + key_.key + '\n')
 
 
 def get_all_matching_keys(bucket, prefix_=None):
-    return [item for item in bucket.list(prefix=prefix_) if is_matching_versioned_pattern(item.key) is True]
+    return [item for item in bucket.list(prefix=prefix_)
+            if is_matching_versioned_pattern(item.key)]
 
 
 def is_matching_versioned_pattern(path):

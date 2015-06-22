@@ -22,19 +22,24 @@ from environment_config import (
 
 def deploy_main(skip_existing=True):
 
-    connection_pools = S3Util.create_connection_pools(AWS_CONFIG_PATH, AWS_PROFILE,
-                                                      CSS_BUCKET, JS_BUCKET, IMAGE_BUCKET)
+    connection_pools = S3Util.create_connection_pools(AWS_CONFIG_PATH,
+                                                      AWS_PROFILE,
+                                                      CSS_BUCKET,
+                                                      JS_BUCKET,
+                                                      IMAGE_BUCKET)
 
     file_objects = get_file_objects(connection_pools, XML_PATH)
 
     if skip_existing:
-        file_objects = [item for item in file_objects if item.exists_in_bucket() == False]
+        file_objects = [item for item in file_objects
+                        if not item.exists_in_bucket()]
 
     for item in file_objects:
         if (len(item.version) == 12 and item.version.isdigit()):
             item.process()
         else:
-            print('Skipping processing of ' + item.versioned_path_in_filesystem +
+            print('Skipping processing of ' +
+                  item.versioned_path_in_filesystem +
                   ', version does not equal 12 digits')
 
 
@@ -53,7 +58,8 @@ def objectify_entries(entries_matrix, connection_pools):
         file_type = entry[1]
         file_version = entry[2]
 
-        f = StaticFile(PREFIX_PATH, file_path, file_type, file_version, connection_pools)
+        f = StaticFile(PREFIX_PATH, file_path, file_type,
+                       file_version, connection_pools)
         items.append(f)
 
     return items
@@ -61,7 +67,8 @@ def objectify_entries(entries_matrix, connection_pools):
 
 class StaticFile(object):
 
-    def __init__(self, prefix_path, file_path, type_, version, connection_pools):
+    def __init__(self, prefix_path, file_path,
+                 type_, version, connection_pools):
 
         if type_ == 'css':
             self.file_path = 'css/' + file_path
@@ -108,7 +115,8 @@ class StaticFile(object):
         elif self.type_ == 'js':
             Minifier.compile_js(input_, self.minified_path)
 
-        print('minified ' + self.path_in_filesystem + ' -> ' + self.minified_path)
+        print('minified ' + self.path_in_filesystem +
+              ' -> ' + self.minified_path)
 
     def gzip(self):
         input_ = self.minified_path
@@ -123,12 +131,14 @@ class StaticFile(object):
         else:
             input_path = self.file_path
 
-        split = re.search(r'(.*)\.(css|js|gif|jpg|jpeg|png)$', input_path).groups()
+        split = re.search(r'(.*)\.(css|js|gif|jpg|jpeg|png)$',
+                          input_path).groups()
         return (split[0] + '-' + self.version + '.' + split[1])
 
     def rename(self):
         os.rename(self.gzipped_path, self.versioned_path_in_filesystem)
-        print('renamed ' + self.gzipped_path + ' -> ' + self.versioned_path_in_filesystem)
+        print('renamed ' + self.gzipped_path +
+              ' -> ' + self.versioned_path_in_filesystem)
 
     def upload(self):
         S3Util.upload_gzipped_file_to_bucket(self.versioned_path_in_filesystem,
@@ -137,7 +147,8 @@ class StaticFile(object):
                                              self.associated_bucket)
 
         print('uploaded ' + self.versioned_path_in_bucket + ' -> ' +
-              'http://' + self.associated_bucket.name + '.s3.amazonaws.com/' + self.versioned_path_in_bucket)
+              'http://' + self.associated_bucket.name +
+              '.s3.amazonaws.com/' + self.versioned_path_in_bucket)
 
     def exists_in_bucket(self):
         return S3Util.file_exists_in_s3_bucket(self.versioned_path_in_bucket,
@@ -147,7 +158,8 @@ class StaticFile(object):
 class S3Util(object):
 
     def create_connection_pools(config_path, profile,
-                                css_bucket_name, js_bucket_name, image_bucket_name):
+                                css_bucket_name, js_bucket_name,
+                                image_bucket_name):
 
         cred = S3Util.get_aws_credentials(config_path, profile)
 
@@ -175,7 +187,8 @@ class S3Util(object):
         k.key = path
         return k.exists()
 
-    def upload_gzipped_file_to_bucket(source_path, uploaded_as_path, file_type, bucket):
+    def upload_gzipped_file_to_bucket(source_path, uploaded_as_path,
+                                      file_type, bucket):
         k = boto.s3.key.Key(bucket)
         k.key = uploaded_as_path
 
@@ -190,9 +203,11 @@ class S3Util(object):
                        'Cache-Control': 'max-age=31536000'}
 
         elif file_type == 'image':
-            headers = {'Cache-Control': str.encode('max-age=31536000, no transform, public')}
+            headers = {'Cache-Control':
+                       str.encode('max-age=31536000, no transform, public')}
 
-        k.set_contents_from_filename(source_path, headers=headers, policy='public-read')
+        k.set_contents_from_filename(source_path,
+                                     headers=headers, policy='public-read')
 
 
 class XMLParser(object):
